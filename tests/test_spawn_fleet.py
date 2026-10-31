@@ -344,12 +344,36 @@ class StartupFailureKinds(FleetCase):
 
     def test_blocked_startup_is_not_retried(self):
         result = self.run_with({"stderr": self.envelope("agent_not_ready", "approval UI")})
-        self.assertEqual(result.returncode, 3)
+        self.assertEqual(result.returncode, 1)
         self.assertEqual(len(self.starts()), 1)
         receipt = receipt_from(result)
-        self.assertEqual(receipt["failure"]["outcome"], "blocked")
-        self.assertEqual(receipt["sessions"][0]["state"], "blocked")
-        self.assertIn("ask the user before answering it", result.stderr)
+        self.assertEqual(receipt["status"], "incomplete")
+        self.assertIsNone(receipt["failure"])
+        session = receipt["sessions"][0]
+        self.assertEqual(session["state"], "blocked")
+        self.assertEqual(session["readiness_error"]["code"], "agent_not_ready")
+        self.assertIn("ask the user", result.stderr)
+
+    def test_blocked_startup_does_not_stop_the_other_sessions(self):
+        # Claude's folder-trust question blocks a fresh directory at start.
+        self.set_scenario(rules=[{
+            "tool": "herdr", "match": ["agent", "start", "alpha"],
+            "stderr": self.envelope("agent_not_ready", "Do you trust this folder?"), "exit": 1,
+        }])
+        result = self.spawn(
+            "--placement", "workspace", "--per-workspace", "1", "--json", "--timeout", "30",
+            f"alpha:{self.dir('a')}", f"beta:{self.dir('b')}", f"gamma:{self.dir('c')}",
+        )
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(len(self.starts()), 3)
+        receipt = receipt_from(result)
+        states = {entry["name"]: entry["state"] for entry in receipt["sessions"]}
+        self.assertEqual(states, {"alpha": "blocked", "beta": "ready", "gamma": "ready"})
+        self.assertEqual(receipt["status"], "incomplete")
+        self.assertEqual(len([r for r in receipt["resources"] if r["kind"] == "pane"]), 3)
+        self.assertIn("! alpha", result.stderr)
+        for workspace in [r["id"] for r in receipt["resources"] if r["kind"] == "workspace"]:
+            self.assertIn(f"herdr workspace close {workspace}", result.stderr)
 
     def test_permission_denial_is_not_retried_or_routed_around(self):
         result = self.run_with({"stderr": self.envelope("permission_denied", "PermissionDenied")})
