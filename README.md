@@ -36,7 +36,7 @@ Codex never falls back to Claude. Claude-only flags (`--claude-arg`, `--permissi
 
 Every input is checked before anything is created, so a bad request leaves no directory, pane or workspace behind.
 
-`--receipt PATH` writes a JSON launch receipt after every allocation. If a launch fails halfway, the receipt still names each pane, workspace, window and directory it created, the exact operation that failed and whether that failure was transient, blocked, denied or of unknown outcome. `--json` prints the receipt on stdout. `--correlate KEY=VALUE` echoes a caller's own IDs (run, workstream, generation) into it verbatim. Partial resources are kept for inspection and the printed teardown names only them. Format and field ownership: [`docs/coordination-contract-v1.md`](docs/coordination-contract-v1.md).
+`--receipt PATH` writes a JSON launch receipt after every allocation. If a launch fails halfway, the receipt still names each pane, workspace, window and directory it created, the exact operation that failed and whether that failure was transient, denied or of unknown outcome. A session blocked at an approval or folder-trust prompt is marked `blocked` while the rest of the fleet starts. `--json` prints the receipt on stdout. `--correlate KEY=VALUE` echoes a caller's own IDs (run, workstream, generation) into it verbatim. Partial resources are kept for inspection and the printed teardown names only them. Format and field ownership: [`docs/coordination-contract-v1.md`](docs/coordination-contract-v1.md).
 
 ## Matching replies to requests
 
