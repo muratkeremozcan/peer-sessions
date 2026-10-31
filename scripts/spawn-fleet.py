@@ -60,7 +60,10 @@ CORRELATION_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 RUNTIMES = ("claude", "codex")
 # herdr's documented default for `agent start` readiness.
 HERDR_START_TIMEOUT_MS = 30000
-DENIAL = re.compile(r"permission|denied|forbidden|unauthori[sz]ed|not allowed", re.I)
+DENIAL = re.compile(
+    r"permission|denied|forbidden|unauthori[sz]ed|not allowed|not permitted|EPERM|EACCES|sandbox",
+    re.I,
+)
 
 EXIT_NOT_READY = 1
 EXIT_LAUNCH_FAILED = 3

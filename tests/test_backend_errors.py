@@ -47,6 +47,8 @@ class HerdrEnvelope(unittest.TestCase):
             ("agent_pane_busy", "", 1, True): "transient",
             ("agent_not_ready", "", 1, True): "blocked",
             ("server_error", "PermissionDenied", 1, True): "denied",
+            ("server_error", "Operation not permitted", 1, True): "denied",
+            ("server_error", "sandbox blocked the call", 1, True): "denied",
             ("agent_start_timeout", "", 1, True): "unknown",
             (None, "usage: herdr agent get <target>", 2, False): "failed",
             (None, "garbage", 1, False): "unknown",
@@ -94,6 +96,27 @@ class CmuxWrapper(unittest.TestCase):
             with self.assertRaises(spawn.BackendError) as caught:
                 spawn.cmux("new-split", "right")
         self.assertEqual(caught.exception.outcome, "denied")
+
+    def test_os_refusal_wording_is_denied(self):
+        for text in (
+            "Error: Operation not permitted",
+            "Error: blocked by sandbox",
+            "Error: EACCES connecting to socket",
+            "Error: EPERM on the cmux socket",
+        ):
+            with self.subTest(text=text):
+                response = completed(1, stdout=text)
+                with mock.patch.object(spawn.subprocess, "run", return_value=response):
+                    with self.assertRaises(spawn.BackendError) as caught:
+                        spawn.cmux("new-workspace")
+                self.assertEqual(caught.exception.outcome, "denied")
+
+    def test_ordinary_failure_stays_failed(self):
+        response = completed(1, stdout="Error: workspace limit reached")
+        with mock.patch.object(spawn.subprocess, "run", return_value=response):
+            with self.assertRaises(spawn.BackendError) as caught:
+                spawn.cmux("new-workspace")
+        self.assertEqual(caught.exception.outcome, "failed")
 
     def test_unparsed_id_is_unknown(self):
         with self.assertRaises(spawn.BackendError) as caught:
