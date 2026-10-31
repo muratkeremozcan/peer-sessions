@@ -53,6 +53,13 @@ class HerdrEnvelope(unittest.TestCase):
             with self.subTest(args=args):
                 self.assertEqual(spawn.classify_herdr(*args), outcome)
 
+    def test_non_object_result_is_unknown(self):
+        for stdout in ('{"result": null}', '{"result": []}', '{"result": "ok"}'):
+            with self.subTest(stdout=stdout):
+                error = self.error_for(completed(0, stdout=stdout))
+                self.assertEqual((error.outcome, error.code), ("unknown", "unparsed_output"))
+                self.assertEqual(error.command, ["agent", "get", "x"])
+
     def test_exit_zero_without_json_is_unknown(self):
         self.assertEqual(self.error_for(completed(0, stdout="ok?")).outcome, "unknown")
 
@@ -122,7 +129,7 @@ class ReceiptFile(unittest.TestCase):
     def test_written_after_each_step_and_states_are_checked(self):
         directory = tempfile.mkdtemp()
         self.addCleanup(lambda: __import__("shutil").rmtree(directory))
-        path = os.path.join(directory, "nested", "receipt.json")
+        path = os.path.join(directory, "receipt.json")
         receipt = receipts.LaunchReceipt("cmux", "claude", "workspace", {"run_id": "r1"}, path)
         receipt.add_session("a", "/tmp/a", True)
         receipt.add_resource("workspace", "W1", "cmux new-workspace", session="a")
@@ -134,6 +141,14 @@ class ReceiptFile(unittest.TestCase):
         with self.assertRaises(ValueError):
             receipt.update_session("a", "finished")
         self.assertEqual(os.listdir(os.path.dirname(path)), ["receipt.json"])
+
+    def test_missing_parent_is_a_receipt_error_and_creates_nothing(self):
+        directory = tempfile.mkdtemp()
+        self.addCleanup(lambda: __import__("shutil").rmtree(directory))
+        path = os.path.join(directory, "nested", "receipt.json")
+        with self.assertRaises(receipts.ReceiptError):
+            receipts.LaunchReceipt("herdr", "claude", "split", path=path)
+        self.assertEqual(os.listdir(directory), [])
 
 
 if __name__ == "__main__":

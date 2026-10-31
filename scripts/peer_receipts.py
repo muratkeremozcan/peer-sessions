@@ -39,6 +39,25 @@ SESSION_STATES = (
 )
 
 
+class ReceiptError(RuntimeError):
+    """The receipt file could not be written.
+
+    Shaped like spawn-fleet's BackendError so a launch reports it the same
+    way. The in-memory receipt stays complete and is still printable.
+    """
+
+    backend = "receipt"
+    outcome = "failed"
+    exit_code = None
+
+    def __init__(self, path, error):
+        self.command = ["write", path]
+        self.code = type(error).__name__
+        self.message = f"cannot write receipt {path}: {error}"
+        self.session = None
+        super().__init__(self.message)
+
+
 def now():
     return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
@@ -46,6 +65,7 @@ def now():
 class LaunchReceipt:
     def __init__(self, backend, runtime, placement, correlation=None, path=None):
         self.path = path
+        self.persist_failed = False
         self.data = {
             "schema": SCHEMA,
             "schema_version": SCHEMA_VERSION,
@@ -139,17 +159,27 @@ class LaunchReceipt:
         return json.dumps(self.data, indent=2)
 
     def flush(self):
+        """Rewrite the receipt file atomically.
+
+        The first write failure raises ReceiptError once; later flushes only
+        update memory, so the caller can still finish and print the inventory.
+        The receipt's parent directory must already exist: writing a receipt
+        never creates directories that would escape the inventory.
+        """
         self.data["updated_at"] = now()
-        if not self.path:
+        if not self.path or self.persist_failed:
             return
         directory = os.path.dirname(os.path.abspath(self.path))
-        os.makedirs(directory, exist_ok=True)
-        handle, temp = tempfile.mkstemp(dir=directory, prefix=".receipt-", suffix=".json")
+        temp = None
         try:
+            handle, temp = tempfile.mkstemp(dir=directory, prefix=".receipt-", suffix=".json")
             with os.fdopen(handle, "w") as stream:
                 stream.write(self.to_json() + "\n")
             os.replace(temp, self.path)
-        except BaseException:
-            if os.path.exists(temp):
+        except OSError as error:
+            if temp and os.path.exists(temp):
                 os.unlink(temp)
-            raise
+            self.persist_failed = True
+            failure = ReceiptError(self.path, error)
+            self.data["persistence_error"] = failure.message
+            raise failure from error

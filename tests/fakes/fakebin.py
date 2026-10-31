@@ -8,11 +8,15 @@ Scenario ($FAKE_STATE/scenario.json):
   rules:  [{"tool": "herdr", "match": ["agent", "start", "beta"], "times": 1,
             "exit": 1, "stderr": "...", "stdout": "..."}]
           First rule whose tokens all appear, in order, in argv wins.
+          "skip": N lets the first N matching calls through to the normal fake.
   agents: {"name": {...}} live herdr agents before the launch
   status: {"name": "blocked"} agent_status reported by `agent get`
   occupant: {"name": {...}} fields to override in `agent get` (identity drift)
   caller: cmux identify payload
   register: true -> a claude launch writes a registry record (pid $FAKE_PID)
+  register_twice: true -> it writes two records with the same name and cwd
+  foreign: {"name", "cwd", "pid"} -> the first launch also writes this record
+  chmod:  {"match": [...], "path": p, "mode": 320} -> chmod p when a call matches
 """
 
 import json
@@ -62,10 +66,14 @@ def apply_rules(scenario):
         if rule.get("tool", TOOL) != TOOL or not contains_in_order(ARGS, rule["match"]):
             continue
         times = rule.get("times", 1)
-        if used.get(str(index), 0) >= times:
+        skip = rule.get("skip", 0)
+        count = used.get(str(index), 0)
+        if count >= skip + times:
             continue
-        used[str(index)] = used.get(str(index), 0) + 1
+        used[str(index)] = count + 1
         save("rules-used.json", used)
+        if count < skip:
+            continue
         sys.stdout.write(rule.get("stdout", ""))
         sys.stderr.write(rule.get("stderr", ""))
         sys.exit(rule.get("exit", 1))
@@ -84,9 +92,19 @@ def register_claude(argv, cwd):
     if not scenario.get("register", True) or not argv or argv[0] != "claude":
         return
     name = argv[argv.index("--name") + 1] if "--name" in argv else None
+    write_record(name, cwd, int(os.environ["FAKE_PID"]))
+    if scenario.get("register_twice"):
+        write_record(name, cwd, int(os.environ["FAKE_PID"]))
+    foreign = scenario.get("foreign")
+    if foreign and not load("foreign-written.json", False):
+        save("foreign-written.json", True)
+        write_record(foreign["name"], foreign["cwd"], foreign["pid"])
+
+
+def write_record(name, cwd, pid):
     session_id = str(uuid.uuid4())
     record = {
-        "pid": int(os.environ["FAKE_PID"]),
+        "pid": pid,
         "sessionId": session_id,
         "procStart": f"fake-{session_id[:8]}",
         "name": name,
@@ -211,7 +229,11 @@ def cmux():
 def main():
     with open(path("calls.jsonl"), "a") as handle:
         handle.write(json.dumps([TOOL, *ARGS]) + "\n")
-    apply_rules(load("scenario.json", {}))
+    scenario = load("scenario.json", {})
+    chmod = scenario.get("chmod")
+    if chmod and contains_in_order(ARGS, chmod["match"]):
+        os.chmod(chmod["path"], chmod["mode"])
+    apply_rules(scenario)
     if TOOL == "herdr":
         herdr()
     cmux()

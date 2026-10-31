@@ -30,6 +30,10 @@ class CorrelationLines(unittest.TestCase):
             "peer-reply: id=r2 target=orbits generation=2": "wrong-generation",
             "  peer-reply: id=r2 target=orbits generation=3  ": "match",
             "text before peer-reply: id=r2 target=orbits generation=3": "uncorrelated",
+            "peer-reply: id=old target=wrong generation=1 id=r2 target=orbits generation=3":
+                "malformed",
+            "peer-reply: id=r2 target=orbits generation=3 extra": "malformed",
+            "peer-reply: id=r2 target=orbits colour=red": "malformed",
         }
         for text, verdict in cases.items():
             with self.subTest(text=text):
@@ -71,6 +75,11 @@ class InboxCorrelation(FleetCase):
                        "2026-10-31T10:06:00Z", 103),
             self.event("sun", "peer-reply: id=r2 target=sun generation=3\nwrong peer",
                        "2026-10-31T10:07:00Z", 104),
+            self.event("orbits", "peer-reply: id=r2 target=sun generation=3\nmislabeled",
+                       "2026-10-31T10:07:30Z", 107),
+            self.event("someone-else",
+                       "peer-reply: id=r2 target=orbits generation=3\nquoted orbits",
+                       "2026-10-31T10:07:45Z", 108),
             self.event("orbits", "peer-reply: id=r2 target=orbits generation=3\nfirst",
                        "2026-10-31T10:08:00Z", 105),
             self.event("orbits", "peer-reply: id=r2 target=orbits generation=3\nrepeat",
@@ -109,7 +118,7 @@ class InboxCorrelation(FleetCase):
         self.assertEqual(payload["messages"], [])
         self.assertEqual(payload["correlation"]["evidence"], "missing")
         self.assertEqual(
-            payload["correlation"]["rejected"], {"other-request": 5, "uncorrelated": 1}
+            payload["correlation"]["rejected"], {"other-request": 7, "uncorrelated": 1}
         )
         self.assertIn("rejected:", result.stderr)
 
@@ -124,17 +133,20 @@ class InboxCorrelation(FleetCase):
         self.assertEqual(payload["correlation"]["duplicates"], 1)
         self.assertEqual(
             payload["correlation"]["rejected"],
-            {"other-request": 1, "uncorrelated": 1, "wrong-generation": 1},
+            {"other-request": 1, "uncorrelated": 1, "wrong-generation": 1, "wrong-target": 1},
         )
         self.assertEqual(payload["correlation"]["evidence"], "reply-correlated")
 
-    def test_wrong_target_is_rejected_by_name(self):
+    def test_target_must_be_the_verified_sender(self):
         result = self.inbox(
             "--session-id", self.session_id, "--request-id", "r2", "--target", "orbits",
-            "--generation", "3", "--json",
+            "--generation", "3", "--all", "--json",
         )
-        rejected = json.loads(result.stdout)["correlation"]["rejected"]
-        self.assertEqual(rejected["wrong-target"], 1)
+        payload = json.loads(result.stdout)
+        # sun's own reply and someone-else quoting orbits both fail the sender check.
+        self.assertEqual(payload["correlation"]["rejected"]["sender-mismatch"], 2)
+        self.assertEqual(payload["correlation"]["rejected"]["wrong-target"], 1)
+        self.assertEqual([m["msgId"] for m in payload["messages"]], ["m105", "m106"])
 
     def test_since_drops_replies_older_than_the_request(self):
         result = self.inbox(
@@ -143,7 +155,7 @@ class InboxCorrelation(FleetCase):
         )
         payload = json.loads(result.stdout)
         self.assertEqual([m["msgId"] for m in payload["messages"]], ["m106"])
-        self.assertEqual(payload["correlation"]["rejected"]["before-since"], 5)
+        self.assertEqual(payload["correlation"]["rejected"]["before-since"], 7)
 
     def test_unverified_peer_events_never_count(self):
         result = self.inbox("--session-id", self.session_id, "--msg-id", "unverified")
@@ -156,9 +168,20 @@ class InboxCorrelation(FleetCase):
         self.assertEqual(json.loads(result.stdout)["outcome"], "uncorrelated")
         answered = brief_echo + "\n" + correlation.reply_line("r9", "rev", "1") + "\nok"
         result = self.inbox("--stdin", "--request-id", "r9", "--target", "rev",
-                            "--generation", "1", stdin=answered)
+                            "--generation", "1", "--json", stdin=answered)
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stdout.strip(), "match")
+        self.assertEqual(json.loads(result.stdout)["outcome"], "match")
+        # Raw text proves no sender or time: weaker evidence than a transcript.
+        self.assertEqual(json.loads(result.stdout)["evidence"], "text-correlated")
+
+    def test_stdin_refuses_filters_it_cannot_check(self):
+        for flag, value in (("--since", "2099-01-01T00:00:00Z"), ("--from", "rev"),
+                            ("--msg-id", "m1")):
+            with self.subTest(flag=flag):
+                result = self.inbox("--stdin", "--request-id", "r", flag, value,
+                                    stdin="peer-reply: id=r")
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(f"--stdin cannot check {flag}", result.stderr)
 
     def test_argument_errors(self):
         for args, message in (

@@ -222,7 +222,7 @@ class PartialLaunchInventory(FleetCase):
                 }
             ]
         )
-        receipt_path = os.path.join(self.root, "out", "receipt.json")
+        receipt_path = os.path.join(self.root, "receipt.json")
         result = self.spawn(
             "--placement", "split", "--receipt", receipt_path, "--json",
             "--correlate", "run_id=r7", "--correlate", "generation=3",
@@ -239,6 +239,7 @@ class PartialLaunchInventory(FleetCase):
         self.assertEqual(panes, [("wT:p2", "first"), ("wT:p3", "second")])
         states = {s["name"]: s["state"] for s in receipt["sessions"]}
         self.assertEqual(states, {"first": "started", "second": "failed"})
+        self.assertTrue(all(s["directory_created"] for s in receipt["sessions"]))
         failure = receipt["failure"]
         self.assertEqual(failure["session"], "second")
         self.assertEqual(failure["code"], "agent_start_failed")
@@ -298,6 +299,25 @@ class PartialLaunchInventory(FleetCase):
         first = receipt["sessions"][0]["identity"]
         self.assertEqual(first["pid"], os.getpid())
         self.assertIn(f"cmux close-workspace --workspace {workspaces[0]['id']}", result.stderr)
+
+
+class DirectoryFailure(FleetCase):
+    def test_unwritable_parent_is_a_denied_partial_launch(self):
+        self.install("herdr")
+        locked = os.path.join(self.root, "locked")
+        os.makedirs(locked)
+        os.chmod(locked, 0o500)
+        self.addCleanup(os.chmod, locked, 0o700)
+        if os.access(locked, os.W_OK):
+            self.skipTest("running with privileges that ignore directory modes")
+        result = self.spawn("--json", f"first:{self.dir('a')}",
+                            f"second:{os.path.join(locked, 'b')}")
+        self.assertEqual(result.returncode, 3, result.stderr)
+        receipt = receipt_from(result)
+        self.assertEqual(receipt["failure"]["backend"], "filesystem")
+        self.assertEqual(receipt["failure"]["outcome"], "denied")
+        self.assertEqual([r["id"] for r in receipt["resources"]], [self.dir("a")])
+        self.assertEqual(self.mutating_calls(), [])
 
 
 class StartupFailureKinds(FleetCase):
@@ -478,6 +498,184 @@ class ClaudeCompatibility(FleetCase):
         self.assertIn("did not become ready in 1s", result.stdout)
         self.assertIn("0/1 ready", result.stderr)
         self.assertIn("cmux close-workspace", result.stdout)
+
+
+class ReceiptPath(FleetCase):
+    def test_missing_receipt_parent_creates_nothing(self):
+        self.install("herdr")
+        for receipt in (os.path.join(self.root, "nope", "r.json"),
+                        os.path.join(self.dir("a"), "r.json")):
+            with self.subTest(receipt=receipt):
+                result = self.spawn("--receipt", receipt, f"alpha:{self.dir('a')}")
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("the receipt never creates directories", result.stderr)
+                self.assertEqual(os.listdir(self.work), [])
+                self.assertEqual(self.mutating_calls(), [])
+
+    def test_receipt_write_failure_keeps_the_inventory(self):
+        self.install("herdr")
+        receipts = os.path.join(self.root, "receipts")
+        os.makedirs(receipts)
+        self.addCleanup(os.chmod, receipts, 0o700)
+        self.set_scenario(chmod={"match": ["pane", "split"], "path": receipts, "mode": 0o500})
+        path = os.path.join(receipts, "r.json")
+        result = self.spawn("--placement", "split", "--json", "--receipt", path,
+                            f"alpha:{self.dir('a')}", f"beta:{self.dir('b')}")
+        if os.access(receipts, os.W_OK):
+            self.skipTest("running with privileges that ignore directory modes")
+        self.assertEqual(result.returncode, 3, result.stderr)
+        receipt = receipt_from(result)
+        self.assertIn("cannot write receipt", receipt["persistence_error"])
+        self.assertEqual(receipt["failure"]["backend"], "receipt")
+        self.assertIn(("pane", "wT:p2"), [(r["kind"], r["id"]) for r in receipt["resources"]])
+        self.assertEqual(self.calls_matching("herdr", "agent", "start"), [])
+        self.assertIn("The receipt file is out of date", result.stderr)
+        with open(path) as handle:
+            stale = json.load(handle)
+        self.assertNotIn("pane", [r["kind"] for r in stale["resources"]])
+
+
+class AncestorValidation(FleetCase):
+    def test_file_in_the_parent_chain_is_rejected_first(self):
+        self.install("herdr")
+        blocker = os.path.join(self.root, "a-file")
+        open(blocker, "w").close()
+        result = self.spawn(f"alpha:{self.dir('a')}", f"beta:{blocker}/child")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("is not a directory", result.stderr)
+        self.assertEqual(os.listdir(self.work), [])
+        self.assertEqual(self.mutating_calls(), [])
+
+
+class RegistryBinding(FleetCase):
+    def setUp(self):
+        super().setUp()
+        self.install("cmux")
+        self.set_scenario(caller={"workspace_id": "W", "surface_id": "S"})
+
+    def test_foreign_record_appearing_during_launch_is_never_bound(self):
+        foreign = subprocess.Popen(["sleep", "30"])
+        self.addCleanup(foreign.wait)
+        self.addCleanup(foreign.kill)
+        self.set_scenario(foreign={"name": "alpha", "cwd": "/other/project", "pid": foreign.pid})
+        result = self.spawn("--json", "--timeout", "5", f"alpha:{self.dir('a')}",
+                            herdr_env=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        identity = receipt_from(result)["sessions"][0]["identity"]
+        self.assertEqual(identity["pid"], os.getpid())
+        self.assertIn(f"kill {os.getpid()}", result.stderr)
+        self.assertNotIn(str(foreign.pid), result.stderr)
+
+    def test_two_matching_new_records_bind_nothing(self):
+        self.set_scenario(register_twice=True)
+        result = self.spawn("--json", "--timeout", "1", f"alpha:{self.dir('a')}",
+                            herdr_env=False)
+        self.assertEqual(result.returncode, 1)
+        session = receipt_from(result)["sessions"][0]
+        self.assertEqual(session["state"], "not_ready")
+        self.assertEqual(session["identity"]["registry_candidates"], 2)
+        self.assertNotIn("pid", session["identity"])
+        self.assertNotIn("kill ", result.stderr)
+        self.assertIn("2 new registry records match", result.stderr)
+
+
+class UnresolvedCmuxRefs(FleetCase):
+    def setUp(self):
+        super().setUp()
+        self.install("cmux")
+        self.set_scenario(caller={"workspace_id": "W", "surface_id": "S"})
+
+    def test_ref_the_tree_cannot_resolve_gets_a_note(self):
+        self.set_scenario(rules=[{"tool": "cmux", "match": ["tree", "--all"], "stdout": "",
+                                  "exit": 0, "times": 99}])
+        result = self.spawn("--json", "--timeout", "5", f"alpha:{self.dir('a')}",
+                            herdr_env=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        (workspace,) = [r for r in receipt_from(result)["resources"] if r["kind"] == "workspace"]
+        self.assertEqual((workspace["id"], workspace["durable"]), ("workspace:1", False))
+        self.assertNotIn("close-workspace --workspace workspace:1", result.stderr)
+        self.assertIn("workspace workspace:1 has no durable id", result.stderr)
+
+    def test_failed_tree_lookup_keeps_the_ref_as_non_durable(self):
+        self.set_scenario(rules=[{"tool": "cmux", "match": ["tree", "--all"],
+                                  "stdout": "Error: tree unavailable"}])
+        result = self.spawn("--json", f"alpha:{self.dir('a')}", herdr_env=False)
+        self.assertEqual(result.returncode, 3)
+        receipt = receipt_from(result)
+        (workspace,) = [r for r in receipt["resources"] if r["kind"] == "workspace"]
+        self.assertFalse(workspace["durable"])
+        self.assertEqual(receipt["failure"]["command"], ["tree", "--all"])
+        self.assertNotIn("close-workspace", result.stdout)
+
+
+class HerdrIdentityDrift(FleetCase):
+    def setUp(self):
+        super().setUp()
+        self.install("herdr")
+
+    def test_moved_pane_moves_the_close_target(self):
+        self.set_scenario(occupant={"alpha": {"pane_id": "wOTHER:p9", "workspace_id": "wOTHER"}})
+        result = self.spawn("--placement", "split", "--json", "--timeout", "5",
+                            f"alpha:{self.dir('a')}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        (pane,) = [r for r in receipt_from(result)["resources"] if r["kind"] == "pane"]
+        self.assertEqual((pane["id"], pane["moved_to"]), ("wT:p2", "wOTHER:p9"))
+        self.assertIn("herdr pane close wOTHER:p9", result.stderr)
+        self.assertNotIn("herdr pane close wT:p2", result.stderr)
+
+    def test_pane_moved_out_of_its_workspace_is_closed_separately(self):
+        self.set_scenario(occupant={"alpha": {"pane_id": "wOTHER:p9", "workspace_id": "wOTHER"}})
+        result = self.spawn("--json", "--timeout", "5", f"alpha:{self.dir('a')}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("herdr workspace close wF1", result.stderr)
+        self.assertIn("herdr pane close wOTHER:p9", result.stderr)
+
+    def test_reassigned_name_turns_the_close_into_a_note(self):
+        self.set_scenario(occupant={"alpha": {"terminal_id": "term_someone_else"}})
+        result = self.spawn("--placement", "split", "--timeout", "1", f"alpha:{self.dir('a')}")
+        self.assertEqual(result.returncode, 1)
+        self.assertNotIn("herdr pane close wT:p2", result.stdout)
+        self.assertIn("pane wT:p2: its agent name now labels a different agent", result.stdout)
+
+    def test_denied_readiness_check_settles_as_denied(self):
+        self.set_scenario(rules=[{
+            "tool": "herdr", "match": ["agent", "get", "alpha"], "skip": 1, "times": 99,
+            "stderr": json.dumps({"error": {"code": "forbidden", "message": "PermissionDenied"}}),
+        }])
+        result = self.spawn("--json", "--timeout", "60", f"alpha:{self.dir('a')}", timeout=30)
+        self.assertEqual(result.returncode, 1)
+        session = receipt_from(result)["sessions"][0]
+        self.assertEqual(session["state"], "denied")
+        self.assertEqual(session["readiness_error"]["outcome"], "denied")
+        self.assertEqual(session["readiness_error"]["command"], ["agent", "get", "alpha"])
+        self.assertLessEqual(len(self.calls_matching("herdr", "agent", "get", "alpha")), 3)
+        self.assertIn("do not route around it", result.stderr)
+
+    def test_unreadable_readiness_answer_settles_as_unknown(self):
+        self.set_scenario(rules=[{
+            "tool": "herdr", "match": ["agent", "get", "alpha"], "skip": 1, "times": 99,
+            "stdout": '{"result": null}', "exit": 0,
+        }])
+        result = self.spawn("--json", "--timeout", "1", f"alpha:{self.dir('a')}")
+        self.assertEqual(result.returncode, 1)
+        session = receipt_from(result)["sessions"][0]
+        self.assertEqual(session["state"], "unknown")
+        self.assertEqual(session["readiness_error"]["code"], "unparsed_output")
+        self.assertIn("Reconcile", result.stderr)
+
+    def test_partial_workspace_payload_keeps_the_ids_it_has(self):
+        payload = {"result": {"root_pane": {"pane_id": "wKNOWN:p1"},
+                              "tab": {"tab_id": "wKNOWN:t1"}}}
+        self.set_scenario(rules=[{"tool": "herdr", "match": ["workspace", "create"],
+                                  "stdout": json.dumps(payload), "exit": 0}])
+        result = self.spawn("--json", f"alpha:{self.dir('a')}")
+        self.assertEqual(result.returncode, 3)
+        receipt = receipt_from(result)
+        self.assertEqual(receipt["status"], "partial")
+        self.assertIn(("pane", "wKNOWN:p1"), [(r["kind"], r["id"]) for r in receipt["resources"]])
+        self.assertEqual(receipt["failure"]["command"][:2], ["workspace", "create"])
+        self.assertEqual(receipt["failure"]["outcome"], "unknown")
+        self.assertIn("workspace.workspace_id", receipt["failure"]["message"])
 
 
 if __name__ == "__main__":

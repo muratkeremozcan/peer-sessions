@@ -32,6 +32,10 @@
       "additionalProperties": { "type": "string" }
     },
     "status": { "enum": ["launching", "ready", "incomplete", "partial", "failed"] },
+    "persistence_error": {
+      "description": "Set when the receipt file could not be written; the file is stale.",
+      "type": "string"
+    },
     "resources": {
       "type": "array",
       "items": {
@@ -48,6 +52,10 @@
           "window": { "type": ["string", "null"] },
           "parent": { "type": "string" },
           "ref": { "type": "string" },
+          "durable": { "type": "boolean" },
+          "verified": { "type": "boolean" },
+          "moved_to": { "type": "string" },
+          "moved_workspace": { "type": ["string", "null"] },
           "created_root": { "type": "string" }
         }
       }
@@ -62,6 +70,10 @@
           "runtime": { "enum": ["claude", "codex"] },
           "cwd": { "type": "string" },
           "directory_created": { "type": "boolean" },
+          "readiness_error": {
+            "type": "object",
+            "required": ["command", "code", "outcome", "exit_code", "message"]
+          },
           "state": {
             "enum": [
               "pending", "start_requested", "started", "ready", "not_ready",
@@ -96,7 +108,7 @@
       "properties": {
         "operation": { "type": "string" },
         "session": { "type": ["string", "null"] },
-        "backend": { "enum": ["cmux", "herdr", null] },
+        "backend": { "enum": ["cmux", "herdr", "filesystem", "receipt", null] },
         "command": { "type": ["array", "null"], "items": { "type": "string" } },
         "code": { "type": ["string", "null"] },
         "outcome": { "enum": ["transient", "blocked", "denied", "unknown", "failed"] },

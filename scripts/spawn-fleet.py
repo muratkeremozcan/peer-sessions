@@ -48,7 +48,7 @@ import subprocess
 import sys
 import time
 
-from peer_receipts import LaunchReceipt
+from peer_receipts import LaunchReceipt, ReceiptError
 from peer_registry import live_records, normalized_name, record_identity, socket_live
 
 
@@ -74,7 +74,7 @@ def say(*args, **kwargs):
 
 
 class BackendError(RuntimeError):
-    """A cmux/herdr operation that did not succeed.
+    """A cmux/herdr operation, or a directory creation, that did not succeed.
 
     `outcome` keeps different failures apart, because they need different
     responses:
@@ -132,8 +132,12 @@ def cmux(*args, timeout=60):
     return output
 
 
-def id_from(output, kind):
-    """Take the durable id for `kind` out of `OK surface:22 (UUID) workspace:10 (UUID)`."""
+def id_from(output, kind, command=None):
+    """Take the durable id for `kind` out of `OK surface:22 (UUID) workspace:10 (UUID)`.
+
+    Falls back to the bare ref when no UUID follows it. Refs renumber, so
+    callers record a ref as non-durable and never print a close command for it.
+    """
     tokens = output.replace("(", " ").replace(")", " ").split()
     for index, token in enumerate(tokens):
         if not token.startswith(f"{kind}:"):
@@ -143,13 +147,16 @@ def id_from(output, kind):
         return token
     # The command succeeded, so the object probably exists; its id is lost.
     raise BackendError(
-        "cmux", None, f"no {kind} id in cmux output: {output!r}",
+        "cmux", command, f"no {kind} id in cmux output: {output!r}",
         code="unparsed_output", outcome="unknown",
     )
 
 
 def workspace_uuid(ref):
-    """`new-workspace` prints a ref only. Refs renumber, so trade it for a UUID."""
+    """`new-workspace` prints a ref only. Refs renumber, so trade it for a UUID.
+
+    Returns None when the tree does not resolve the ref.
+    """
     if UUID.match(ref):
         return ref
     # `list-workspaces` covers the caller's window only, so read every window.
@@ -157,7 +164,11 @@ def workspace_uuid(ref):
         rf"workspace {re.escape(ref)}(?![0-9])\s+([0-9A-Fa-f-]{{36}})",
         cmux("tree", "--all"),
     )
-    return match.group(1) if match else ref
+    return match.group(1) if match else None
+
+
+def durable(identifier):
+    return bool(identifier and UUID.match(identifier))
 
 
 def start_session(workspace, surface, directory, argv, name, receipt):
@@ -189,20 +200,15 @@ def build_splits(specs, argv_for, caller, direction, focus, receipt):
     }
     for name, directory in specs:
         with tracking(receipt, name):
-            output = cmux(
-                "new-split",
-                direction,
-                "--workspace",
-                workspace,
-                "--surface",
-                anchor,
-                "--focus",
-                focus,
-            )
-            surface = id_from(output, "surface")
+            split_args = [
+                "new-split", direction, "--workspace", workspace, "--surface", anchor,
+                "--focus", focus,
+            ]
+            surface = id_from(cmux(*split_args), "surface", split_args)
             layout["surfaces"].append(surface)
             receipt.add_resource(
-                "surface", surface, "cmux new-split", session=name, workspace=workspace
+                "surface", surface, "cmux new-split", session=name, workspace=workspace,
+                durable=durable(surface),
             )
             start_session(workspace, surface, directory, argv_for(name), name, receipt)
         anchor = surface  # chain, so the panes line up in spec order
@@ -232,49 +238,73 @@ def build_workspaces(specs, argv_for, window, prefix, per_workspace, direction, 
         cmux_args += ["--focus", focus if group_index == 1 else "false"]
         with tracking(receipt, first_name):
             receipt.update_session(first_name, "start_requested")
-            ref = id_from(cmux(*cmux_args), "workspace")
+            ref = id_from(cmux(*cmux_args), "workspace", cmux_args)
             # Record the ref before the UUID lookup, which can fail on its own.
             resource = receipt.add_resource(
-                "workspace", ref, "cmux new-workspace", session=first_name, window=window
+                "workspace", ref, "cmux new-workspace", session=first_name, window=window,
+                durable=durable(ref),
             )
-            workspace = workspace_uuid(ref)
-            if workspace != ref:
-                resource.update({"id": workspace, "ref": ref})
+            resolved = workspace_uuid(ref)
+            if resolved is None:
+                # Keep going on the ref, which is valid right now, but never
+                # hand it out as a close target: it can renumber.
+                workspace = ref
+            elif resolved != ref:
+                workspace = resolved
+                resource.update({"id": resolved, "ref": ref, "durable": True})
                 receipt.flush()
+            else:
+                workspace = ref
             layout["workspaces"].append(workspace)
             receipt.update_session(first_name, workspace=workspace)
 
         for name, directory in group[1:]:
             with tracking(receipt, name):
-                output = cmux(
+                split_args = [
                     "new-split", direction, "--workspace", workspace, "--focus", "false"
-                )
-                surface = id_from(output, "surface")
+                ]
+                surface = id_from(cmux(*split_args), "surface", split_args)
                 layout["surfaces"].append(surface)
                 receipt.add_resource(
-                    "surface", surface, "cmux new-split", session=name, workspace=workspace
+                    "surface", surface, "cmux new-split", session=name, workspace=workspace,
+                    durable=durable(surface),
                 )
                 start_session(workspace, surface, directory, argv_for(name), name, receipt)
     return layout
+
+
+def close_line(resource, command):
+    """A close command only for a durable id; a ref gets a note instead."""
+    if resource.get("durable", True):
+        return f"  {command}"
+    return (
+        f"  # {resource['kind']} {resource['id']} has no durable id (refs renumber). "
+        "Resolve it with `cmux tree --all` before closing it."
+    )
 
 
 def cleanup_lines_cmux(receipt, layout):
     lines = []
     if layout["placement"] == "window":
         for window in receipt.owned("window"):
-            lines.append(f"  cmux close-window --window {window['id']}")
+            lines.append(close_line(window, f"cmux close-window --window {window['id']}"))
             lines.append("  # close-window can return OK and leave the window open.")
             lines.append("  # If it stays in cmux list-windows, ask the user for a Cmd+W.")
     elif layout["placement"] == "workspace":
         for workspace in receipt.owned("workspace"):
-            lines.append(f"  cmux close-workspace --workspace {workspace['id']}")
+            lines.append(
+                close_line(workspace, f"cmux close-workspace --workspace {workspace['id']}")
+            )
     else:
         # Split placement lives in the caller's own workspace. Close the new
         # panes only. Never close this workspace or this window.
         for surface in receipt.owned("surface"):
             lines.append(
-                f"  cmux close-surface --workspace {surface['workspace']} "
-                f"--surface {surface['id']}"
+                close_line(
+                    surface,
+                    f"cmux close-surface --workspace {surface['workspace']} "
+                    f"--surface {surface['id']}",
+                )
             )
     return lines
 
@@ -326,7 +356,13 @@ def herdr(*args, timeout=60):
     stderr = (result.stderr or "").strip()
     payload = _json(stdout)
     if result.returncode == 0 and isinstance(payload, dict) and "error" not in payload:
-        return payload.get("result", {})
+        found = payload.get("result", {})
+        if not isinstance(found, dict):
+            raise BackendError(
+                "herdr", args, f"success payload has no result object: {stdout!r}",
+                code="unparsed_output", outcome="unknown", exit_code=0,
+            )
+        return found
 
     envelope = None
     for candidate in (payload, _json(stderr)):
@@ -349,16 +385,27 @@ def herdr(*args, timeout=60):
     raise BackendError("herdr", args, message, code, outcome, result.returncode)
 
 
-def herdr_result_id(result, *path):
-    """Read an id out of a herdr success payload; a missing id is an unknown outcome."""
+def optional_id(result, *path):
     value = result
     for key in path:
         value = value.get(key) if isinstance(value, dict) else None
-    if not isinstance(value, str) or not value:
-        raise BackendError(
-            "herdr", None, f"no {'.'.join(path)} in herdr output: {result!r}",
-            code="unparsed_output", outcome="unknown",
-        )
+    return value if isinstance(value, str) and value else None
+
+
+def missing_ids(command, result, *paths):
+    """The operation succeeded but some ids are absent: an unknown outcome."""
+    names = ", ".join(".".join(path) for path in paths)
+    return BackendError(
+        "herdr", command, f"no {names} in herdr output: {result!r}",
+        code="unparsed_output", outcome="unknown",
+    )
+
+
+def herdr_result_id(result, *path, command=None):
+    """Read an id out of a herdr success payload; a missing id is an unknown outcome."""
+    value = optional_id(result, *path)
+    if value is None:
+        raise missing_ids(command, result, path)
     return value
 
 
@@ -429,7 +476,7 @@ def build_splits_herdr(specs, argv_for, caller, direction, focus, receipt):
             ]
             split_args.append("--focus" if focus == "true" else "--no-focus")
             result = herdr(*split_args)
-            pane_id = herdr_result_id(result, "pane", "pane_id")
+            pane_id = herdr_result_id(result, "pane", "pane_id", command=split_args)
             layout["surfaces"].append(pane_id)
             receipt.add_resource(
                 "pane", pane_id, "herdr pane split", session=name,
@@ -457,26 +504,41 @@ def build_workspaces_herdr(specs, argv_for, prefix, per_workspace, direction, fo
         )
         with tracking(receipt, first_name):
             result = herdr(*create_args)
-            workspace_id = herdr_result_id(result, "workspace", "workspace_id")
-            layout["workspaces"].append(workspace_id)
-            receipt.add_resource(
-                "workspace", workspace_id, "herdr workspace create", session=first_name
-            )
-            root_pane_id = herdr_result_id(result, "root_pane", "pane_id")
-            receipt.add_resource(
-                "pane", root_pane_id, "herdr workspace create", session=first_name,
-                workspace=workspace_id, parent=workspace_id,
-            )
+            # Record every id herdr did return before complaining about one it
+            # did not: each names something that now exists.
+            workspace_id = optional_id(result, "workspace", "workspace_id")
+            root_pane_id = optional_id(result, "root_pane", "pane_id")
+            if workspace_id:
+                layout["workspaces"].append(workspace_id)
+                receipt.add_resource(
+                    "workspace", workspace_id, "herdr workspace create", session=first_name
+                )
+            if root_pane_id:
+                receipt.add_resource(
+                    "pane", root_pane_id, "herdr workspace create", session=first_name,
+                    workspace=workspace_id, parent=workspace_id,
+                )
+            absent = [
+                path
+                for path, value in (
+                    (("workspace", "workspace_id"), workspace_id),
+                    (("root_pane", "pane_id"), root_pane_id),
+                )
+                if value is None
+            ]
+            if absent:
+                raise missing_ids(create_args, result, *absent)
             start_session_herdr(first_name, root_pane_id, argv_for(first_name), receipt)
 
         anchor = root_pane_id
         for name, directory in group[1:]:
             with tracking(receipt, name):
-                result = herdr(
+                split_args = [
                     "pane", "split", "--pane", anchor, "--direction", direction,
                     "--cwd", directory, "--no-focus",
-                )
-                pane_id = herdr_result_id(result, "pane", "pane_id")
+                ]
+                result = herdr(*split_args)
+                pane_id = herdr_result_id(result, "pane", "pane_id", command=split_args)
                 layout["surfaces"].append(pane_id)
                 receipt.add_resource(
                     "pane", pane_id, "herdr pane split", session=name,
@@ -500,40 +562,88 @@ def herdr_readiness(name, runtime, expected=None):
     across a pane move but issues a new pane id, so the terminal id is compared
     when known and the pane id otherwise.
 
-    Returns (state, agent): ready, blocked, starting, missing, mismatch, or a
-    BackendError outcome when the lookup itself failed.
+    Returns (state, agent, error). state is ready, blocked, starting, missing,
+    mismatch, or the BackendError outcome (denied, unknown, failed) when the
+    lookup itself failed; error is that BackendError.
     """
+    command = ["agent", "get", name]
     try:
-        result = herdr("agent", "get", name)
+        result = herdr(*command)
     except BackendError as error:
-        return ("missing" if error.code == "agent_not_found" else error.outcome), None
+        if error.code == "agent_not_found":
+            return "missing", None, None
+        return error.outcome, None, error
     agent = result.get("agent", result)
+    if not isinstance(agent, dict):
+        error = missing_ids(command, result, ("agent",))
+        return error.outcome, None, error
     if agent.get("agent") not in (None, runtime):
-        return "mismatch", agent
+        return "mismatch", agent, None
     expected = expected or {}
     if expected.get("terminal_id") and agent.get("terminal_id"):
         if agent["terminal_id"] != expected["terminal_id"]:
-            return "mismatch", agent
+            return "mismatch", agent, None
     elif expected.get("pane_id") and agent.get("pane_id") != expected["pane_id"]:
-        return "mismatch", agent
+        return "mismatch", agent, None
     status = agent.get("agent_status")
     if status == "blocked":
-        return "blocked", agent
+        return "blocked", agent, None
     ready_flag = agent.get("interactive_ready")
     if status in ("idle", "done", "working") and (
         ready_flag or (ready_flag is None and status in ("idle", "done"))
     ):
-        return "ready", agent
-    return "starting", agent
+        return "ready", agent, None
+    return "starting", agent, None
+
+
+def reconcile_pane(receipt, name, agent, verified):
+    """Bring a session's pane resource up to date with what herdr reports now.
+
+    A pane moved to another workspace gets a new pane id; herdr never reuses
+    pane ids, and the old one stops resolving. When the terminal id still
+    matches (verified), the close target follows the move. When the name now
+    labels someone else, the pane is kept in the inventory but its teardown is
+    a note, not a command.
+    """
+    for resource in receipt.owned("pane"):
+        if resource["session"] != name:
+            continue
+        if not verified:
+            resource["verified"] = False
+        elif isinstance(agent, dict) and agent.get("pane_id") not in (None, resource["id"]):
+            resource["moved_to"] = agent["pane_id"]
+            resource["moved_workspace"] = agent.get("workspace_id")
+    receipt.flush()
 
 
 def cleanup_lines_herdr(receipt, layout):
     lines = []
+    panes = receipt.owned("pane")
     if layout["placement"] == "workspace":
+        doubtful = {pane.get("parent") for pane in panes if pane.get("verified") is False}
         for workspace in receipt.owned("workspace"):
-            lines.append(f"  herdr workspace close {workspace['id']}")
-    else:
-        for pane in receipt.owned("pane"):
+            if workspace["id"] in doubtful:
+                lines.append(
+                    f"  # workspace {workspace['id']} holds a pane whose agent name now "
+                    "labels a different agent. Inspect it before closing it."
+                )
+            else:
+                lines.append(f"  herdr workspace close {workspace['id']}")
+        # A pane moved out of its workspace is not closed with it.
+        panes = [
+            pane for pane in panes
+            if pane.get("verified") is False
+            or (pane.get("moved_to") and pane.get("moved_workspace") != pane.get("parent"))
+        ]
+    for pane in panes:
+        if pane.get("verified") is False:
+            lines.append(
+                f"  # pane {pane['id']}: its agent name now labels a different agent. "
+                "Inspect it with `herdr pane get` before closing it."
+            )
+        elif pane.get("moved_to"):
+            lines.append(f"  herdr pane close {pane['moved_to']}   # moved from {pane['id']}")
+        else:
             lines.append(f"  herdr pane close {pane['id']}")
     return lines
 
@@ -551,8 +661,9 @@ def tracking(receipt, name):
     except BackendError as error:
         if error.session is None:
             error.session = name
-            state = {"blocked": "blocked", "denied": "denied", "unknown": "unknown"}
-            receipt.update_session(name, state.get(error.outcome, "failed"))
+            if error.backend != "receipt":
+                state = {"blocked": "blocked", "denied": "denied", "unknown": "unknown"}
+                receipt.update_session(name, state.get(error.outcome, "failed"))
         raise
 
 
@@ -637,6 +748,11 @@ def parse_specs(raw, backend, dirs_mode):
                 "Create it first, or use --dirs create."
             )
         else:
+            ancestor = os.path.dirname(first_missing_ancestor(directory))
+            if not os.path.isdir(ancestor):
+                raise ValueError(
+                    f"'{directory}' cannot be created: '{ancestor}' is not a directory"
+                )
             missing.add(directory)
         specs.append((name, directory))
     names = [name for name, _ in specs]
@@ -670,33 +786,22 @@ def create_directories(specs, missing, receipt):
         if directory not in missing or os.path.isdir(directory):
             continue
         created_root = first_missing_ancestor(directory)
-        os.makedirs(directory, exist_ok=True)
+        try:
+            os.makedirs(directory, exist_ok=True)
+        except OSError as error:
+            failure = BackendError(
+                "filesystem", ["mkdir", directory], str(error),
+                code=type(error).__name__,
+                outcome="denied" if isinstance(error, PermissionError) else "failed",
+            )
+            failure.session = name
+            receipt.update_session(name, "denied" if failure.outcome == "denied" else "failed")
+            raise failure from error
         receipt.add_resource(
             "directory", directory, "mkdir", session=name, created_root=created_root
         )
-
-
-def new_matching_records(before, wanted):
-    return [
-        record
-        for record in live_records()
-        if record_identity(record) not in before and normalized_name(record) in wanted
-    ]
-
-
-def ready_by_name(records):
-    ready = {}
-    for record in records:
-        socket_path = record.get("messagingSocketPath")
-        if not socket_live(socket_path):
-            continue
-        name = normalized_name(record)
-        previous = ready.get(name)
-        if previous is None or (record.get("startedAt") or 0) > (
-            previous.get("startedAt") or 0
-        ):
-            ready[name] = record
-    return ready
+        receipt.session(name)["directory_created"] = True
+        receipt.flush()
 
 
 def registry_identity(record):
@@ -708,28 +813,36 @@ def registry_identity(record):
     }
 
 
-def attach_registry_identities(receipt, specs, before):
-    """Bind each Claude session to the one new registry record it launched.
+def bind_registry(name, directory, before):
+    """Find the one Claude registry record this launch created for `name`.
 
-    Only records absent before the launch, with the same name and cwd, count.
-    Zero or several candidates leave the PID unrecorded: a guess could point a
-    later `kill` at someone else's session.
+    Only records absent before the launch, with the same name and the same
+    (resolved) cwd, count. Returns (record or None, number of candidates).
+    Several candidates bind nothing: a guess could point a later `kill` at
+    someone else's session.
     """
+    real = os.path.realpath(directory)
+    candidates = [
+        record
+        for record in live_records()
+        if record_identity(record) not in before
+        and normalized_name(record) == name
+        and isinstance(record.get("cwd"), str)
+        and os.path.realpath(record["cwd"]) == real
+    ]
+    return (candidates[0] if len(candidates) == 1 else None), len(candidates)
+
+
+def attach_registry_identities(receipt, specs, before):
+    """Record each Claude session's registry identity, when it is unambiguous."""
     if receipt.data["runtime"] != "claude":
         return
-    records = [r for r in live_records() if record_identity(r) not in before]
     for name, directory in specs:
-        real = os.path.realpath(directory)
-        candidates = [
-            r
-            for r in records
-            if normalized_name(r) == name
-            and (r.get("cwd") is None or os.path.realpath(r["cwd"]) == real)
-        ]
-        if len(candidates) == 1:
-            receipt.update_session(name, **registry_identity(candidates[0]))
-        elif len(candidates) > 1:
-            receipt.update_session(name, registry_candidates=len(candidates))
+        record, count = bind_registry(name, directory, before)
+        if record is not None:
+            receipt.update_session(name, **registry_identity(record))
+        elif count > 1:
+            receipt.update_session(name, registry_candidates=count)
 
 
 def cleanup_block(receipt, layout, backend):
@@ -765,7 +878,13 @@ def report_failure(receipt, error, layout, backend):
         file=sys.stderr,
     )
     print(f"  {error.message}", file=sys.stderr)
-    if failure["outcome"] == "denied":
+    if failure["backend"] == "receipt":
+        print(
+            "  The receipt file is out of date. The inventory below, from memory, "
+            "is complete; no further launches were attempted.",
+            file=sys.stderr,
+        )
+    elif failure["outcome"] == "denied":
         print(
             "  The backend refused. Tell the user; do not route around it.",
             file=sys.stderr,
@@ -902,8 +1021,17 @@ def validate(args, parser):
             )
     elif args.codex_arg:
         parser.error("--codex-arg is for the codex runtime; use --claude-arg")
-    if args.receipt and os.path.isdir(args.receipt):
-        parser.error(f"--receipt {args.receipt} is a directory; give a file path")
+    if args.receipt:
+        receipt_dir = os.path.dirname(os.path.abspath(args.receipt))
+        if os.path.isdir(args.receipt):
+            parser.error(f"--receipt {args.receipt} is a directory; give a file path")
+        if not os.path.isdir(receipt_dir):
+            parser.error(
+                f"--receipt: '{receipt_dir}' does not exist. Create it first; the "
+                "receipt never creates directories."
+            )
+        if not os.access(receipt_dir, os.W_OK):
+            parser.error(f"--receipt: '{receipt_dir}' is not writable")
     try:
         specs, missing = parse_specs(args.specs, backend, args.dirs)
         correlation = parse_correlation(args.correlate)
@@ -927,7 +1055,7 @@ def validate(args, parser):
         # herdr names are unique among live agents; a clash would fail only
         # after a pane exists. Ask first (read-only).
         for name, _ in specs:
-            state, agent = herdr_readiness(name, args.runtime)
+            state, agent, _ = herdr_readiness(name, args.runtime)
             if agent is not None:
                 parser.error(
                     f"a live herdr agent is already named '{name}' "
@@ -969,111 +1097,182 @@ def runtime_argv(args):
     return argv_for
 
 
-def main(argv=None):
-    global OUT
-    parser = build_parser()
-    args = parser.parse_args(argv)
-    OUT = sys.stderr if args.json else sys.stdout
+def error_record(error):
+    return {
+        "command": error.command,
+        "code": error.code,
+        "outcome": error.outcome,
+        "exit_code": error.exit_code,
+        "message": error.message,
+    }
 
-    backend, placement, specs, missing, correlation, caller = validate(args, parser)
-    focus = args.focus or ("false" if placement == "split" else "true")
-    wanted = {name for name, _ in specs}
-    argv_for = runtime_argv(args)
-    before = {record_identity(record) for record in live_records()}
 
-    # Validation passed. From here on, record every side effect as it happens.
-    receipt = LaunchReceipt(backend, args.runtime, placement, correlation, args.receipt)
-    for name, directory in specs:
-        receipt.add_session(name, directory, directory in missing)
+def stop(receipt, error, plan, args):
+    """Report a launch that stopped early, with everything it created."""
+    receipt.fail(" ".join(error.command or []) or "parse backend output", error, error.session)
+    layout = plan["layout"] or {
+        "placement": plan["placement"], "backend": plan["backend"], "workspaces": [],
+    }
+    attach_registry_identities(receipt, plan["specs"], plan["before"])
+    report_failure(receipt, error, layout, plan["backend"])
+    if args.json:
+        print(receipt.to_json())
+    elif receipt.persist_failed:
+        # The file is stale; the full inventory has to reach someone.
+        print(receipt.to_json(), file=sys.stderr)
+    return EXIT_LAUNCH_FAILED
 
-    layout = None
-    try:
-        create_directories(specs, missing, receipt)
-        if backend == "herdr":
-            if placement == "split":
-                layout = build_splits_herdr(
-                    specs, argv_for, caller, args.direction, focus, receipt
-                )
-                say(f"workspace {layout['workspace']} (this one)")
-                say(f"panes {', '.join(layout['surfaces'])}")
-            else:
-                layout = build_workspaces_herdr(
-                    specs, argv_for, args.prefix, args.per_workspace, args.direction,
-                    focus, receipt,
-                )
-                layout["placement"] = placement
-                layout["backend"] = "herdr"
-                say(f"workspaces {', '.join(layout['workspaces'])}")
+
+def build_layout(args, plan, receipt):
+    backend, placement, specs = plan["backend"], plan["placement"], plan["specs"]
+    caller, focus, argv_for = plan["caller"], plan["focus"], plan["argv_for"]
+    create_directories(specs, plan["missing"], receipt)
+    if backend == "herdr":
+        if placement == "split":
+            layout = build_splits_herdr(specs, argv_for, caller, args.direction, focus, receipt)
+            say(f"workspace {layout['workspace']} (this one)")
+            say(f"panes {', '.join(layout['surfaces'])}")
         else:
-            if placement == "split":
-                layout = build_splits(specs, argv_for, caller, args.direction, focus, receipt)
-                say(f"workspace {layout['workspace']} (this one)")
-                say(f"panes {', '.join(layout['surfaces'])}")
-            else:
-                # Partial layout for the teardown block if building fails.
-                layout = {"placement": placement, "backend": "cmux", "workspaces": []}
-                if placement == "window":
-                    with tracking(receipt, specs[0][0]):
-                        window = cmux("new-window").split()[-1]
-                    receipt.add_resource("window", window, "cmux new-window")
-                    say(f"window {window} (new)")
-                else:
-                    window = caller.get("window")
-                    say(f"window {window or '(focused)'} (this one)")
-                layout = build_workspaces(
-                    specs,
-                    argv_for,
-                    window,
-                    args.prefix,
-                    args.per_workspace,
-                    args.direction,
-                    focus,
-                    receipt,
-                )
-                layout["placement"] = placement
-                layout["backend"] = "cmux"
-                say(f"workspaces {', '.join(layout['workspaces'])}")
-    except BackendError as error:
-        receipt.fail(
-            " ".join(error.command or []) or "parse backend output", error, error.session
-        )
-        if layout is None:
-            layout = {"placement": placement, "backend": backend, "workspaces": []}
-        attach_registry_identities(receipt, specs, before)
-        report_failure(receipt, error, layout, backend)
-        if args.json:
-            print(receipt.to_json())
-        return EXIT_LAUNCH_FAILED
+            layout = build_workspaces_herdr(
+                specs, argv_for, args.prefix, args.per_workspace, args.direction,
+                focus, receipt,
+            )
+            layout["placement"] = placement
+            layout["backend"] = "herdr"
+            say(f"workspaces {', '.join(layout['workspaces'])}")
+        return layout
+    if placement == "split":
+        layout = build_splits(specs, argv_for, caller, args.direction, focus, receipt)
+        say(f"workspace {layout['workspace']} (this one)")
+        say(f"panes {', '.join(layout['surfaces'])}")
+        return layout
+    # Partial layout for the teardown block if building fails.
+    plan["layout"] = {"placement": placement, "backend": "cmux", "workspaces": []}
+    if placement == "window":
+        with tracking(receipt, specs[0][0]):
+            window = cmux("new-window").split()[-1]
+        receipt.add_resource("window", window, "cmux new-window", durable=durable(window))
+        say(f"window {window} (new)")
+    else:
+        window = caller.get("window")
+        say(f"window {window or '(focused)'} (this one)")
+    layout = build_workspaces(
+        specs, argv_for, window, args.prefix, args.per_workspace, args.direction, focus,
+        receipt,
+    )
+    layout["placement"] = placement
+    layout["backend"] = "cmux"
+    say(f"workspaces {', '.join(layout['workspaces'])}")
+    return layout
 
-    started = time.time()
-    states = {}
-    agents = {}
-    records = []
-    ready = {}
+
+SETTLED = ("ready", "blocked", "denied")
+
+
+def wait_for_readiness(args, plan, receipt):
+    """Poll until every session is ready or settled, or the timeout passes.
+
+    Returns {name: (state, observed, error)}. herdr observes the agent; cmux
+    observes the one registry record bound by name and cwd.
+    """
+    backend, specs, before = plan["backend"], plan["specs"], plan["before"]
+    seen = {}
 
     def poll():
-        nonlocal records, ready
-        if backend == "herdr":
-            for name in wanted:
-                if states.get(name) in ("ready", "blocked"):
-                    continue
+        for name, directory in specs:
+            if seen.get(name, (None,))[0] in SETTLED:
+                continue
+            if backend == "herdr":
                 expected = receipt.session(name)["identity"]
-                states[name], agents[name] = herdr_readiness(name, args.runtime, expected)
-            ready = {name: agents[name] for name in wanted if states.get(name) == "ready"}
-        else:
-            records = new_matching_records(before, wanted)
-            ready = ready_by_name(records)
+                seen[name] = herdr_readiness(name, args.runtime, expected)
+                continue
+            record, count = bind_registry(name, directory, before)
+            if record is not None and socket_live(record.get("messagingSocketPath")):
+                seen[name] = ("ready", record, None)
+            else:
+                seen[name] = ("ambiguous" if count > 1 else "starting", None, None)
 
+    started = time.time()
     while time.time() - started < args.timeout:
         poll()
-        settled = sum(1 for name in wanted if states.get(name) in ("ready", "blocked"))
-        if len(ready) == len(wanted) or (backend == "herdr" and settled == len(wanted)):
+        if all(seen.get(name, (None,))[0] in SETTLED for name, _ in specs):
             break
         time.sleep(2)
     poll()
-    elapsed = int(time.time() - started)
+    plan["elapsed"] = int(time.time() - started)
+    return seen
 
-    if backend == "cmux" and focus == "true" and layout["workspaces"]:
+
+def record_readiness(receipt, plan, seen):
+    backend = plan["backend"]
+    attach_registry_identities(receipt, plan["specs"], plan["before"])
+    for name, _ in plan["specs"]:
+        state, observed, error = seen.get(name, ("starting", None, None))
+        if state == "ready" and backend == "herdr":
+            receipt.update_session(name, "ready", **agent_identity(observed))
+            reconcile_pane(receipt, name, observed, verified=True)
+        elif state == "ready":
+            receipt.update_session(name, "ready", **registry_identity(observed))
+        elif state == "blocked":
+            receipt.update_session(name, "blocked", **agent_identity(observed))
+        elif state == "mismatch":
+            # The name now labels a different occupant. Keep both identities.
+            receipt.update_session(
+                name, "not_ready", observed_occupant=agent_identity(observed)
+            )
+            reconcile_pane(receipt, name, observed, verified=False)
+        elif error is not None:
+            # The readiness lookup itself was refused or unreadable.
+            receipt.session(name)["readiness_error"] = error_record(error)
+            receipt.update_session(name, "denied" if state == "denied" else "unknown")
+        else:
+            receipt.update_session(name, "not_ready")
+
+
+def report_readiness(receipt, plan, args):
+    backend = plan["backend"]
+    for entry in receipt.data["sessions"]:
+        name, state, identity = entry["name"], entry["state"], entry["identity"]
+        if state == "ready" and backend == "herdr":
+            say(f"+ {name:<24} pane {identity.get('pane_id', '?')}")
+        elif state == "ready":
+            say(f"+ {name:<24} pid {identity['pid']:<7} uds:{identity['messaging_socket']}")
+        elif state == "blocked":
+            say(
+                f"! {name:<24} blocked at an approval or question prompt "
+                f"(pane {identity.get('pane_id', '?')})"
+            )
+        elif state == "denied":
+            say(
+                f"x {name:<24} herdr refused the readiness check: "
+                f"{entry['readiness_error']['message']}. Tell the user; do not route around it."
+            )
+        elif state == "unknown":
+            say(
+                f"? {name:<24} readiness unknown: {entry['readiness_error']['message']}. "
+                "Reconcile (herdr agent get/read) before another attempt."
+            )
+        elif "observed_occupant" in identity:
+            say(f"- {name:<24} herdr name now labels a different agent; not this launch's")
+        elif "registry_candidates" in identity:
+            say(
+                f"- {name:<24} {identity['registry_candidates']} new registry records match "
+                "this name and directory; none is bound"
+            )
+        else:
+            say(f"- {name:<24} did not become ready in {args.timeout}s")
+
+
+def launch(args, plan, receipt):
+    try:
+        plan["layout"] = build_layout(args, plan, receipt)
+    except BackendError as error:
+        return stop(receipt, error, plan, args)
+    layout, backend = plan["layout"], plan["backend"]
+
+    seen = wait_for_readiness(args, plan, receipt)
+
+    if backend == "cmux" and plan["focus"] == "true" and layout["workspaces"]:
         # A new window opens on its own default workspace, so `--focus true`
         # on the first workspace does not stick. Select it again here, after
         # every session has booted. An earlier switch races the launch
@@ -1083,48 +1282,15 @@ def main(argv=None):
         except BackendError as error:
             print(f"note: could not refocus the fleet: {error.message}", file=sys.stderr)
 
-    attach_registry_identities(receipt, specs, before)
-    for name, _ in specs:
-        if name in ready:
-            if backend == "herdr":
-                receipt.update_session(name, "ready", **agent_identity(ready[name]))
-            else:
-                receipt.update_session(name, "ready", **registry_identity(ready[name]))
-        elif states.get(name) == "blocked":
-            receipt.update_session(name, "blocked", **agent_identity(agents.get(name)))
-        elif states.get(name) == "mismatch":
-            # The name now labels a different occupant. Keep both identities.
-            receipt.update_session(
-                name, "not_ready", observed_occupant=agent_identity(agents.get(name))
-            )
-        else:
-            receipt.update_session(name, "not_ready")
+    record_readiness(receipt, plan, seen)
+    report_readiness(receipt, plan, args)
 
-    for name, _ in specs:
-        entry = receipt.session(name)
-        if entry["state"] == "ready":
-            if backend == "herdr":
-                say(f"+ {name:<24} pane {entry['identity'].get('pane_id', '?')}")
-            else:
-                say(
-                    f"+ {name:<24} pid {entry['identity']['pid']:<7} "
-                    f"uds:{entry['identity']['messaging_socket']}"
-                )
-        elif entry["state"] == "blocked":
-            say(
-                f"! {name:<24} blocked at an approval or question prompt "
-                f"(pane {entry['identity'].get('pane_id', '?')})"
-            )
-        elif "observed_occupant" in entry["identity"]:
-            say(f"- {name:<24} herdr name now labels a different agent; not this launch's")
-        else:
-            say(f"- {name:<24} did not become ready in {args.timeout}s")
-
-    missing_names = [name for name, _ in specs if name not in ready]
-    if missing_names:
+    ready = [entry for entry in receipt.data["sessions"] if entry["state"] == "ready"]
+    total = len(plan["specs"])
+    if len(ready) < total:
         receipt.finish("incomplete")
         print(
-            f"\n{len(ready)}/{len(wanted)} ready after {elapsed}s. "
+            f"\n{len(ready)}/{total} ready after {plan['elapsed']}s. "
             "Check the pane — a stalled permission prompt never registers.",
             file=sys.stderr,
         )
@@ -1135,7 +1301,7 @@ def main(argv=None):
         return EXIT_NOT_READY
 
     receipt.finish("ready")
-    say(f"\n{len(ready)} ready in {elapsed}s.")
+    say(f"\n{len(ready)} ready in {plan['elapsed']}s.")
     if backend == "cmux":
         say("Send with a uds: address above, or a freshly resolved ListAgents name/ref.")
     for line in cleanup_block(receipt, layout, backend):
@@ -1150,6 +1316,40 @@ def main(argv=None):
     if args.json:
         print(receipt.to_json())
     return 0
+
+
+def main(argv=None):
+    global OUT
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    OUT = sys.stderr if args.json else sys.stdout
+
+    backend, placement, specs, missing, correlation, caller = validate(args, parser)
+    plan = {
+        "backend": backend,
+        "placement": placement,
+        "specs": specs,
+        "missing": missing,
+        "caller": caller,
+        "focus": args.focus or ("false" if placement == "split" else "true"),
+        "argv_for": runtime_argv(args),
+        "before": {record_identity(record) for record in live_records()},
+        "layout": None,
+        "elapsed": 0,
+    }
+
+    # Validation passed. From here on, record every side effect as it happens.
+    try:
+        receipt = LaunchReceipt(backend, args.runtime, placement, correlation, args.receipt)
+    except ReceiptError as error:
+        print(f"error: {error.message}. Nothing was created.", file=sys.stderr)
+        return EXIT_LAUNCH_FAILED
+    try:
+        for name, directory in specs:
+            receipt.add_session(name, directory, False)
+        return launch(args, plan, receipt)
+    except ReceiptError as error:
+        return stop(receipt, error, plan, args)
 
 
 if __name__ == "__main__":

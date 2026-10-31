@@ -71,7 +71,11 @@ def parse_time(value):
 
 
 def correlate(messages, request_id, target=None, generation=None, since=None):
-    """Split messages into matches and rejections for one request."""
+    """Split messages into matches and rejections for one request.
+
+    With a target, the verified sender must be that target. A reply quoted or
+    forwarded by another peer carries the right text from the wrong session.
+    """
     matches = []
     rejected = {}
     for message in messages:
@@ -83,6 +87,9 @@ def correlate(messages, request_id, target=None, generation=None, since=None):
         if request_id is None:
             matches.append(message)
             continue
+        if target is not None and target not in (message.get("name"), message.get("from")):
+            rejected["sender-mismatch"] = rejected.get("sender-mismatch", 0) + 1
+            continue
         verdict = classify(message["body"], request_id, target, generation)
         if verdict == "match":
             matches.append(message)
@@ -92,7 +99,11 @@ def correlate(messages, request_id, target=None, generation=None, since=None):
 
 
 def classify_text(args):
-    """Check text from another channel (e.g. `herdr agent read`) for one request."""
+    """Check text from another channel (e.g. `herdr agent read`) for one request.
+
+    Raw text proves neither sender nor time, so the evidence level is
+    `text-correlated`, weaker than a verified transcript reply.
+    """
     text = sys.stdin.read()
     verdict = classify(text, args.request_id, args.target, args.generation)
     payload = {
@@ -100,7 +111,7 @@ def classify_text(args):
         "target": args.target,
         "generation": args.generation,
         "outcome": verdict,
-        "evidence": "reply-correlated" if verdict == "match" else "missing",
+        "evidence": "text-correlated" if verdict == "match" else "missing",
     }
     if args.json:
         print(json.dumps(payload, indent=2))
@@ -151,6 +162,18 @@ def main():
     if args.stdin:
         if not args.request_id:
             parser.error("--stdin needs --request-id")
+        unusable = [
+            flag
+            for flag, value in (
+                ("--since", args.since), ("--from", args.sender), ("--msg-id", args.msg_id)
+            )
+            if value is not None
+        ]
+        if unusable:
+            parser.error(
+                f"--stdin cannot check {', '.join(unusable)}: raw text carries no verified "
+                "sender, message id or timestamp"
+            )
         return classify_text(args)
 
     session_id = args.session_id

@@ -69,18 +69,33 @@ def footer(request_id, target=None, generation=None):
     )
 
 
+def parse_line(fields_text):
+    """One envelope, or None if it is malformed.
+
+    Malformed: a token without `=`, an unknown key, an empty value, a repeated
+    key, or no id. A damaged or concatenated envelope must not satisfy an
+    identity its opening fields do not carry.
+    """
+    fields = {}
+    for token in fields_text.split():
+        key, sep, value = token.partition("=")
+        if not sep or key not in FIELDS or not value or key in fields:
+            return None
+        fields[key] = value
+    return fields if "id" in fields else None
+
+
 def parse(text):
-    """Return every line-leading peer-reply line in `text` as a dict of its fields."""
+    """Return (envelopes, malformed count) for the line-leading peer-reply lines."""
     found = []
+    malformed = 0
     for match in LINE.finditer(text or ""):
-        fields = {}
-        for token in match.group("fields").split():
-            key, sep, value = token.partition("=")
-            if sep and key in FIELDS and value:
-                fields[key] = value
-        if "id" in fields:
+        fields = parse_line(match.group("fields"))
+        if fields is None:
+            malformed += 1
+        else:
             found.append(fields)
-    return found
+    return found, malformed
 
 
 def classify(text, request_id, target=None, generation=None):
@@ -88,13 +103,14 @@ def classify(text, request_id, target=None, generation=None):
 
     match             carries this id, and the target/generation asked for
     uncorrelated      carries no peer-reply line at all
+    malformed         carries only peer-reply lines that do not parse cleanly
     other-request     carries only lines for different request ids
     wrong-target      right id, different target
     wrong-generation  right id and target, different generation
     """
-    lines = parse(text)
+    lines, malformed = parse(text)
     if not lines:
-        return "uncorrelated"
+        return "malformed" if malformed else "uncorrelated"
     same_id = [fields for fields in lines if fields["id"] == request_id]
     if not same_id:
         return "other-request"
