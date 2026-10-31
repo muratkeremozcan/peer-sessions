@@ -5,7 +5,7 @@ import os
 import subprocess
 import unittest
 
-from helpers import FleetCase
+from helpers import FleetCase, load_script
 from schema_check import errors, load_schema
 
 SCHEMA = load_schema()
@@ -99,6 +99,50 @@ class InvalidInputCreatesNothing(FleetCase):
         self.install("cmux")
         result = self.spawn("--placement", "split", f"alpha:{self.dir('a')}", herdr_env=False)
         self.assert_rejected(result, "--placement split needs a cmux terminal")
+
+    def refuse_identify(self, message):
+        self.install("cmux")
+        self.set_scenario(
+            rules=[{"tool": "cmux", "match": ["identify"], "exit": 1, "stdout": message}],
+            register=True,
+        )
+
+    def test_refused_caller_check_stops_split(self):
+        self.refuse_identify("Error: permission denied")
+        result = self.spawn("--placement", "split", f"alpha:{self.dir('a')}", herdr_env=False)
+        self.assert_rejected(result, "cmux refused the caller check")
+        self.assertNotIn("needs a cmux terminal", result.stderr)
+
+    def test_refused_caller_check_stops_workspace(self):
+        self.refuse_identify("Error: permission denied")
+        result = self.spawn(
+            "--placement", "workspace", "--timeout", "3", f"alpha:{self.dir('a')}",
+            herdr_env=False,
+        )
+        self.assert_rejected(result, "cmux refused the caller check")
+
+    def test_failed_caller_check_still_means_outside_cmux(self):
+        self.refuse_identify("Error: not running inside a cmux terminal")
+        result = self.spawn("--placement", "split", f"alpha:{self.dir('a')}", herdr_env=False)
+        self.assert_rejected(result, "--placement split needs a cmux terminal")
+        self.assertNotIn("refused", result.stderr)
+
+    def test_unanswered_caller_check_is_not_outside_cmux(self):
+        spawn = load_script("spawn_fleet_caller", "spawn-fleet.py")
+
+        def no_answer(*args, **kwargs):
+            raise spawn.BackendError(
+                "cmux", args, "no answer within 60s", code="timeout", outcome="unknown"
+            )
+
+        original = spawn.cmux
+        spawn.cmux = no_answer
+        try:
+            with self.assertRaises(spawn.BackendError) as caught:
+                spawn.caller_context("cmux")
+        finally:
+            spawn.cmux = original
+        self.assertEqual(caught.exception.outcome, "unknown")
 
     def test_herdr_backend_outside_herdr(self):
         self.install("herdr")

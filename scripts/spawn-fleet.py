@@ -708,7 +708,13 @@ def caller_context(backend):
         }
     try:
         payload = json.loads(cmux("identify"))
-    except (BackendError, ValueError):
+    except BackendError as error:
+        # A refusal or a missing answer does not mean "outside cmux"; reading it
+        # that way would steer the launch around the refusal.
+        if error.outcome in ("denied", "unknown"):
+            raise
+        return {}
+    except ValueError:
         return {}
     caller = payload.get("caller") or {}
     return {
@@ -1062,7 +1068,14 @@ def validate(args, parser):
                     f"--receipt {args.receipt} is session {name}'s directory or one of "
                     "its parents; put the receipt somewhere else"
                 )
-    caller = caller_context(backend)
+    try:
+        caller = caller_context(backend)
+    except BackendError as error:
+        verb = "refused" if error.outcome == "denied" else "gave no usable answer to"
+        parser.error(
+            f"cmux {verb} the caller check (cmux identify): {error.message}. "
+            "Nothing was created. Tell the user; do not route around it."
+        )
     if placement == "split":
         if backend == "herdr" and not caller.get("surface"):
             parser.error(
