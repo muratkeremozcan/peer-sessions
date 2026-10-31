@@ -103,6 +103,9 @@ class CmuxWrapper(unittest.TestCase):
             "Error: blocked by sandbox",
             "Error: EACCES connecting to socket",
             "Error: EPERM on the cmux socket",
+            "ERROR: Authentication required",
+            "Error: auth_required",
+            "Error: Invalid password",
         ):
             with self.subTest(text=text):
                 response = completed(1, stdout=text)
@@ -110,6 +113,26 @@ class CmuxWrapper(unittest.TestCase):
                     with self.assertRaises(spawn.BackendError) as caught:
                         spawn.cmux("new-workspace")
                 self.assertEqual(caught.exception.outcome, "denied")
+
+    def test_socket_without_a_complete_answer_is_unknown(self):
+        for text in (
+            "Error: Command timed out",
+            "Error: Socket closed before reply",
+            "Error: Socket closed before complete reply",
+        ):
+            with self.subTest(text=text):
+                response = completed(1, stdout=text)
+                with mock.patch.object(spawn.subprocess, "run", return_value=response):
+                    with self.assertRaises(spawn.BackendError) as caught:
+                        spawn.cmux("identify")
+                self.assertEqual(caught.exception.outcome, "unknown")
+
+    def test_uppercase_error_prefix_with_exit_zero_is_an_error(self):
+        response = completed(0, stdout="ERROR: Authentication required")
+        with mock.patch.object(spawn.subprocess, "run", return_value=response):
+            with self.assertRaises(spawn.BackendError) as caught:
+                spawn.cmux("identify")
+        self.assertEqual(caught.exception.outcome, "denied")
 
     def test_ordinary_failure_stays_failed(self):
         response = completed(1, stdout="Error: workspace limit reached")

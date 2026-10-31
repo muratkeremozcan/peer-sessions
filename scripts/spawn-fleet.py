@@ -61,9 +61,12 @@ RUNTIMES = ("claude", "codex")
 # herdr's documented default for `agent start` readiness.
 HERDR_START_TIMEOUT_MS = 30000
 DENIAL = re.compile(
-    r"permission|denied|forbidden|unauthori[sz]ed|not allowed|not permitted|EPERM|EACCES|sandbox",
+    r"permission|denied|forbidden|unauthori[sz]ed|not allowed|not permitted|EPERM|EACCES|sandbox"
+    r"|auth_required|authentication required|invalid password",
     re.I,
 )
+# cmux CLI wording when its socket gave no complete answer: the command may have run.
+NO_ANSWER = re.compile(r"command timed out|socket closed before (complete )?reply", re.I)
 
 EXIT_NOT_READY = 1
 EXIT_LAUNCH_FAILED = 3
@@ -129,8 +132,13 @@ def cmux(*args, timeout=60):
     except OSError as error:
         raise BackendError("cmux", args, str(error), code="exec_failed") from error
     output = (result.stdout + result.stderr).strip()
-    if result.returncode != 0 or output.startswith("Error"):
-        outcome = "denied" if DENIAL.search(output) else "failed"
+    if result.returncode != 0 or output[:5].lower() == "error":
+        if DENIAL.search(output):
+            outcome = "denied"
+        elif NO_ANSWER.search(output):
+            outcome = "unknown"
+        else:
+            outcome = "failed"
         raise BackendError("cmux", args, output, outcome=outcome, exit_code=result.returncode)
     return output
 

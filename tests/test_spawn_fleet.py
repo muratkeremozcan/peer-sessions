@@ -121,6 +121,22 @@ class InvalidInputCreatesNothing(FleetCase):
         )
         self.assert_rejected(result, "cmux refused the caller check")
 
+    def test_cmux_authentication_refusal_stops_workspace(self):
+        self.refuse_identify("ERROR: Authentication required")
+        result = self.spawn(
+            "--placement", "workspace", "--timeout", "3", f"alpha:{self.dir('a')}",
+            herdr_env=False,
+        )
+        self.assert_rejected(result, "cmux refused the caller check")
+
+    def test_cmux_socket_timeout_stops_workspace(self):
+        self.refuse_identify("Error: Command timed out")
+        result = self.spawn(
+            "--placement", "workspace", "--timeout", "3", f"alpha:{self.dir('a')}",
+            herdr_env=False,
+        )
+        self.assert_rejected(result, "cmux gave no usable answer to the caller check")
+
     def test_failed_caller_check_still_means_outside_cmux(self):
         self.refuse_identify("Error: not running inside a cmux terminal")
         result = self.spawn("--placement", "split", f"alpha:{self.dir('a')}", herdr_env=False)
