@@ -614,7 +614,13 @@ def herdr_readiness(name, runtime, expected=None):
         return "blocked", agent, None
     ready_flag = agent.get("interactive_ready")
     if status in ("idle", "done", "working") and (
-        ready_flag or (ready_flag is None and status in ("idle", "done"))
+        ready_flag
+        or (
+            # A missing flag counts only once herdr has finished the launch.
+            ready_flag is None
+            and not agent.get("launch_pending")
+            and status in ("idle", "done")
+        )
     ):
         return "ready", agent, None
     return "starting", agent, None

@@ -509,6 +509,29 @@ class Readiness(FleetCase):
                             f"rev:{self.dir('a')}")
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_idle_with_launch_pending_is_not_ready(self):
+        for runtime in ("claude", "codex"):
+            with self.subTest(runtime=runtime):
+                name = f"pend-{runtime}"
+                self.set_scenario(
+                    occupant={name: {"interactive_ready": None, "launch_pending": True}}
+                )
+                result = self.spawn("--runtime", runtime, "--json", "--timeout", "2",
+                                    f"{name}:{self.dir(name)}")
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertEqual(receipt_from(result)["sessions"][0]["state"], "not_ready")
+
+    def test_idle_after_launch_without_ready_flag_counts(self):
+        for runtime in ("claude", "codex"):
+            with self.subTest(runtime=runtime):
+                name = f"done-{runtime}"
+                self.set_scenario(
+                    occupant={name: {"interactive_ready": None, "launch_pending": False}}
+                )
+                result = self.spawn("--runtime", runtime, "--json", "--timeout", "5",
+                                    f"{name}:{self.dir(name)}")
+                self.assertEqual(result.returncode, 0, result.stderr)
+
 
 class OwnedCleanup(FleetCase):
     def test_herdr_teardown_names_only_this_launch(self):
