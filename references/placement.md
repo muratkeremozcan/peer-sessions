@@ -35,7 +35,7 @@ Exit status: 0 every session ready; 1 some session not ready or blocked before `
 
 Teardown is off by default (SKILL.md section 4). These are the commands you hand the user, and the commands you run once the user asks.
 
-The spawn script prints the exact teardown with real UUIDs, built from the resources that launch recorded as its own. It kills only PIDs bound to a registry record that appeared during the launch with the same name and cwd; an older session sharing the name is never included. When you must write it by hand:
+The spawn script prints the exact teardown with real UUIDs, built from the resources that launch recorded as its own. Its `kill` line names only PIDs bound to a registry record that appeared during the launch with the same name and cwd; an older session sharing the name is never included. The script runs none of it. When you must write it by hand:
 
 ```bash
 kill <pid> <pid>                                    # always first; pids from peer-addr.py

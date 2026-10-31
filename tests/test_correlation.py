@@ -43,8 +43,9 @@ class CorrelationLines(unittest.TestCase):
         self.assertEqual(correlation.classify("peer-reply: id=r2", "r2"), "match")
 
     def test_ids_with_whitespace_are_refused(self):
-        with self.assertRaises(ValueError):
-            correlation.request_line("r 2")
+        for value in ("r 2", "r2\n", "\tr2", ""):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                correlation.request_line(value)
 
     def test_cli_prints_the_footer(self):
         result = subprocess.run(

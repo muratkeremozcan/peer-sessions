@@ -13,7 +13,8 @@ from unittest import mock
 from helpers import load_script
 
 spawn = load_script("spawn_fleet", "spawn-fleet.py")
-receipts = load_script("peer_receipts", "peer_receipts.py")
+# The module spawn-fleet imported, so ReceiptError is the class it catches.
+import peer_receipts as receipts  # noqa: E402
 
 
 def completed(returncode=0, stdout="", stderr=""):
@@ -260,6 +261,33 @@ class SessionStaging(unittest.TestCase):
         self.assertEqual([s["name"] for s in receipt["sessions"]], ["alpha", "beta"])
         self.assertIn("cannot write receipt", receipt["persistence_error"])
         self.assertEqual(receipt["status"], "failed")
+
+
+class StopKeepsTheBackendFailure(unittest.TestCase):
+    def test_receipt_write_failure_inside_stop_keeps_the_backend_error(self):
+        directory = tempfile.mkdtemp()
+        self.addCleanup(lambda: __import__("shutil").rmtree(directory))
+        receipt = receipts.LaunchReceipt("herdr", "claude", "split",
+                                         path=os.path.join(directory, "r.json"))
+        receipt.add_session("alpha", "/tmp/a", False)
+        receipt.add_resource("pane", "w:p2", "herdr pane split", session="alpha")
+        error = spawn.BackendError("herdr", ["agent", "start", "alpha"], "approval UI",
+                                   "agent_not_ready", "blocked", 1)
+        error.session = "alpha"
+        plan = {"layout": None, "placement": "split", "backend": "herdr",
+                "specs": [("alpha", "/tmp/a")], "before": set()}
+        args = mock.Mock(json=True)
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(receipts.os, "replace", side_effect=PermissionError("ro")), \
+                mock.patch.object(spawn, "live_records", return_value=[]), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = spawn.stop(receipt, error, plan, args)
+        self.assertEqual(code, 3)
+        printed = json.loads(out.getvalue())
+        self.assertEqual(printed["failure"]["code"], "agent_not_ready")
+        self.assertEqual(printed["failure"]["outcome"], "blocked")
+        self.assertIn("cannot write receipt", printed["persistence_error"])
+        self.assertIn("note: cannot write receipt", err.getvalue())
 
 
 if __name__ == "__main__":

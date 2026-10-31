@@ -30,7 +30,7 @@ import sys
 REQUEST = "peer-request:"
 REPLY = "peer-reply:"
 LINE = re.compile(r"^[ \t]*peer-reply:[ \t]*(?P<fields>[^\n]*?)[ \t]*$", re.MULTILINE)
-VALUE = re.compile(r"^\S+$")
+VALUE = re.compile(r"\S+")
 FIELDS = ("id", "target", "generation")
 
 
@@ -38,7 +38,7 @@ def _check(name, value):
     if value is None:
         return None
     value = str(value)
-    if not VALUE.match(value):
+    if not VALUE.fullmatch(value):
         raise ValueError(f"{name} must be non-empty with no whitespace: {value!r}")
     return value
 

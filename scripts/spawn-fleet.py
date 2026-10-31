@@ -1133,7 +1133,14 @@ def error_record(error):
 
 def stop(receipt, error, plan, args):
     """Report a launch that stopped early, with everything it created."""
-    receipt.fail(" ".join(error.command or []) or "parse backend output", error, error.session)
+    try:
+        receipt.fail(
+            " ".join(error.command or []) or "parse backend output", error, error.session
+        )
+    except ReceiptError as write_error:
+        # fail() records the backend failure in memory before writing; that
+        # failure is the one to report. The stale file is secondary.
+        print(f"  note: {write_error.message}", file=sys.stderr)
     layout = plan["layout"] or {
         "placement": plan["placement"], "backend": plan["backend"], "workspaces": [],
     }
