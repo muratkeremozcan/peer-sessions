@@ -817,7 +817,7 @@ def registry_identity(record):
     }
 
 
-def bind_registry(name, directory, before):
+def bind_registry(name, directory, before, records=None):
     """Find the one Claude registry record this launch created for `name`.
 
     Only records absent before the launch, with the same name and the same
@@ -828,7 +828,7 @@ def bind_registry(name, directory, before):
     real = os.path.realpath(directory)
     candidates = [
         record
-        for record in live_records()
+        for record in (live_records() if records is None else records)
         if record_identity(record) not in before
         and normalized_name(record) == name
         and isinstance(record.get("cwd"), str)
@@ -841,8 +841,12 @@ def attach_registry_identities(receipt, specs, before):
     """Record each Claude session's registry identity, when it is unambiguous."""
     if receipt.data["runtime"] != "claude":
         return
+    snapshot = live_records()  # one read, so every name is judged on the same state
+    present = {entry["name"] for entry in receipt.data["sessions"]}
     for name, directory in specs:
-        record, count = bind_registry(name, directory, before)
+        if name not in present:
+            continue
+        record, count = bind_registry(name, directory, before, snapshot)
         identity = receipt.session(name)["identity"]
         if record is not None:
             identity.pop("registry_candidates", None)
@@ -1227,20 +1231,21 @@ def wait_for_readiness(args, plan, receipt):
 
 def record_readiness(receipt, plan, seen):
     backend = plan["backend"]
-    if backend == "cmux":
-        # One final candidate set decides both readiness and the PID binding.
-        for name, directory in plan["specs"]:
-            record, _ = bind_registry(name, directory, plan["before"])
-            live = record is not None and socket_live(record.get("messagingSocketPath"))
-            seen[name] = ("ready", record, None) if live else ("starting", None, None)
+    # One registry snapshot decides cmux readiness and the PID binding together:
+    # a second read could disagree with the first.
     attach_registry_identities(receipt, plan["specs"], plan["before"])
+    if backend == "cmux":
+        for name, _ in plan["specs"]:
+            identity = receipt.session(name)["identity"]
+            live = "pid" in identity and socket_live(identity.get("messaging_socket"))
+            seen[name] = ("ready", None, None) if live else ("starting", None, None)
     for name, _ in plan["specs"]:
         state, observed, error = seen.get(name, ("starting", None, None))
         if state == "ready" and backend == "herdr":
             receipt.update_session(name, "ready", **agent_identity(observed))
             reconcile_pane(receipt, name, observed, verified=True)
         elif state == "ready":
-            receipt.update_session(name, "ready", **registry_identity(observed))
+            receipt.update_session(name, "ready")  # identity bound from the snapshot
         elif state == "blocked":
             # herdr_readiness checked identity before reporting blocked.
             receipt.update_session(name, "blocked", **agent_identity(observed))
@@ -1376,7 +1381,8 @@ def main(argv=None):
         return EXIT_LAUNCH_FAILED
     try:
         for name, directory in specs:
-            receipt.add_session(name, directory, False)
+            receipt.add_session(name, directory, False, flush=False)
+        receipt.flush()
         return launch(args, plan, receipt)
     except ReceiptError as error:
         return stop(receipt, error, plan, args)

@@ -86,7 +86,7 @@ class LaunchReceipt:
 
     # -- recording ---------------------------------------------------------
 
-    def add_session(self, name, cwd, directory_created):
+    def add_session(self, name, cwd, directory_created, flush=True):
         self.data["sessions"].append(
             {
                 "name": name,
@@ -97,7 +97,8 @@ class LaunchReceipt:
                 "identity": {},
             }
         )
-        self.flush()
+        if flush:
+            self.flush()
 
     def session(self, name):
         for entry in self.data["sessions"]:

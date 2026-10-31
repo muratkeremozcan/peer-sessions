@@ -1,7 +1,10 @@
 """Backend wrappers classify failures without touching a real multiplexer."""
 
+import contextlib
+import io
 import json
 import os
+import socket
 import subprocess
 import tempfile
 import unittest
@@ -184,6 +187,79 @@ class ReceiptWriteFailures(unittest.TestCase):
         self.assertTrue(os.path.isdir(target))
         self.assertEqual(receipt.data["resources"][0]["id"], target)
         self.assertTrue(receipt.session("a")["directory_created"])
+
+
+class FinalBindingSnapshot(unittest.TestCase):
+    """cmux readiness and the PID come from one registry read, never two."""
+
+    def setUp(self):
+        self.directory = tempfile.mkdtemp(dir="/tmp")
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.directory))
+        self.sock = os.path.join(self.directory, "s.sock")
+        self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.server.bind(self.sock)
+        self.server.listen(4)
+        self.addCleanup(self.server.close)
+
+    def record(self, session_id, pid):
+        return {"pid": pid, "sessionId": session_id, "procStart": session_id, "name": "alpha",
+                "cwd": self.directory, "messagingSocketPath": self.sock}
+
+    def test_registry_changing_between_reads_cannot_restore_a_pid(self):
+        one = [self.record("s1", 111111)]
+        two = one + [self.record("s2", 222222)]
+        receipt = receipts.LaunchReceipt("cmux", "claude", "workspace")
+        receipt.add_session("alpha", self.directory, False)
+        plan = {"backend": "cmux", "specs": [("alpha", self.directory)], "before": set()}
+        seen = {"alpha": ("ready", one[0], None)}  # the polling loop saw one record
+        with mock.patch.object(spawn, "live_records", side_effect=[two, one, one]) as reads:
+            spawn.record_readiness(receipt, plan, seen)
+        self.assertEqual(reads.call_count, 1)
+        session = receipt.session("alpha")
+        self.assertEqual(session["state"], "not_ready")
+        self.assertEqual(session["identity"]["registry_candidates"], 2)
+        self.assertNotIn("pid", session["identity"])
+
+    def test_unique_record_in_the_snapshot_is_ready(self):
+        receipt = receipts.LaunchReceipt("cmux", "claude", "workspace")
+        receipt.add_session("alpha", self.directory, False)
+        plan = {"backend": "cmux", "specs": [("alpha", self.directory)], "before": set()}
+        with mock.patch.object(spawn, "live_records", return_value=[self.record("s1", 111111)]):
+            spawn.record_readiness(receipt, plan, {})
+        session = receipt.session("alpha")
+        self.assertEqual((session["state"], session["identity"]["pid"]), ("ready", 111111))
+
+
+class SessionStaging(unittest.TestCase):
+    def test_receipt_failure_while_adding_sessions_still_reports(self):
+        directory = tempfile.mkdtemp()
+        self.addCleanup(lambda: __import__("shutil").rmtree(directory))
+        path = os.path.join(directory, "r.json")
+        specs = [("alpha", "/nowhere/a"), ("beta", "/nowhere/b")]
+        real_replace = os.replace
+        calls = []
+
+        def replace(source, target):
+            calls.append(target)
+            if len(calls) > 1:  # the constructor's write succeeds, the next fails
+                raise PermissionError("read-only")
+            return real_replace(source, target)
+
+        validated = ("herdr", "split", specs, set(), {}, {"surface": "w:p1"})
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(spawn, "validate", return_value=validated), \
+                mock.patch.object(spawn, "live_records", return_value=[]), \
+                mock.patch.object(spawn, "build_layout") as build, \
+                mock.patch.object(receipts.os, "replace", side_effect=replace), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = spawn.main(["--json", "--receipt", path, "alpha:/nowhere/a",
+                               "beta:/nowhere/b"])
+        self.assertEqual(code, 3, err.getvalue())
+        build.assert_not_called()
+        receipt = json.loads(out.getvalue())
+        self.assertEqual([s["name"] for s in receipt["sessions"]], ["alpha", "beta"])
+        self.assertIn("cannot write receipt", receipt["persistence_error"])
+        self.assertEqual(receipt["status"], "failed")
 
 
 if __name__ == "__main__":
