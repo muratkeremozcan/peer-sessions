@@ -26,7 +26,7 @@ Exit status: 0 every session ready; 1 some session not ready or blocked before `
 
 ## Placement facts
 
-- `split` needs a cmux terminal, because it splits **your** pane (found via `cmux identify`), or a herdr pane (`HERDR_PANE_ID`) on herdr. The script exits with an error, before creating anything, outside one. Its teardown closes the new panes only. It never closes your workspace.
+- `split` needs a cmux terminal, because it splits **your** pane (found via `cmux identify`), or a herdr pane (`HERDR_PANE_ID`) on herdr. The script exits with an error, before creating anything, outside one. If cmux refuses that check, the script exits 2 and names the refusal: tell the user. Its teardown closes the new panes only. It never closes your workspace.
 - `split` keeps `--focus false` so the user's keystrokes stay in their own pane.
 - More than 3 side panes get too narrow to read. Use `--direction down`, or `--placement workspace`.
 - `--placement window` opens the window with an extra empty shell workspace, and `cmux close-window` can return `OK` and leave the window open. Expect to ask the user for a Cmd+W. `split` and `workspace` tear down cleanly, so prefer them.
