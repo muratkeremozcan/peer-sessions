@@ -26,20 +26,24 @@ Do not use `--dangerously-skip-permissions` or a restrictive `--allowedTools` li
 For a reply, keep the relay alive and wait until `peer-addr.py` lists it with a reachable `uds:` address. Put that literal address in the outgoing brief:
 
 ```text
+peer-request: id=<request-id> target=<target-name>
+Make the first line of your reply exactly: peer-reply: id=<request-id> target=<target-name>
 When done, reply with:
 SendMessage(to: "uds:/tmp/cc-socks/<relay-pid>.sock",
-            message: "STATUS: ...",
+            message: "peer-reply: id=<request-id> target=<target-name>\nSTATUS: ...",
             summary: "Peer status reply")
 ```
+
+`scripts/peer_correlation.py --id <request-id> --target <target-name>` prints the first two lines. Use a new request id for every request.
 
 Then read the relay's terminal only when the reply arrives or the session is otherwise quiet. Do not poll a healthy peer fleet continuously. A terminal viewport can truncate a long reply, so recover the canonical peer-origin body from the relay transcript before cleanup:
 
 ```bash
 python3 ~/.claude/skills/peer-sessions/scripts/peer-inbox.py \
-  --pid <relay-pid> --from <peer-name> --wait 60
+  --pid <relay-pid> --from <peer-name> --request-id <request-id> --wait 60
 ```
 
-The helper accepts only transcript events marked `origin.kind: peer` with a verified peer PID. Use `--json` when another tool will consume the result, or `--session-id` if you already recorded the relay session ID and its registry entry is gone.
+The helper accepts only transcript events marked `origin.kind: peer` with a verified peer PID. With `--request-id`, it also requires the matching `peer-reply:` line, so an earlier reply from the same peer is never returned as this answer; rejected replies are counted by reason in `--json` output. Add `--since <ISO time of the send>` to drop anything older than the request. Use `--json` when another tool will consume the result, or `--session-id` if you already recorded the relay session ID and its registry entry is gone.
 
 ## 3. No relay inbox: verified one-way fallback
 
