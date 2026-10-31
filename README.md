@@ -15,7 +15,32 @@ Or copy this folder into `~/.claude/skills/peer-sessions/`.
 ## Requirements
 
 - Claude Code **2.1.224 or newer** on macOS or Linux. Older builds publish no messaging socket, so a session is alive but no other session can reach it.
-- [`cmux`](https://github.com/anthropics/cmux) for the spawn scripts. The messaging itself needs no terminal multiplexer — only the fleet layout does.
+- One terminal multiplexer for the spawn script: [`cmux`](https://github.com/anthropics/cmux), or [herdr](https://herdr.dev) (built against the 0.8.2 CLI). The messaging itself needs no terminal multiplexer; only the fleet layout does.
+- The herdr backend runs only from inside a herdr pane (`HERDR_ENV=1`), because herdr allows control only from a herdr-managed caller.
+- Python 3.9 or newer. The scripts use the standard library only.
+
+## Backends and runtimes
+
+`--backend auto|cmux|herdr` picks the multiplexer. An explicit choice wins. `auto` picks herdr when the script runs inside a herdr pane, else cmux if it is on `PATH`, else herdr.
+
+`--runtime claude|codex` picks the agent CLI, separately from the backend and from `--model`.
+
+| Runtime | cmux | herdr | Reply channel |
+|---|---|---|---|
+| `claude` (default) | supported | supported | `SendMessage`, or `herdr agent prompt/read` where the harness scopes `SendMessage` |
+| `codex` | refused before anything is created | `herdr agent start --kind codex` | `herdr agent prompt/read` |
+
+Codex never falls back to Claude. Claude-only flags (`--claude-arg`, `--permission-mode`) are refused for Codex; pass Codex flags with `--codex-arg`. Codex through cmux, and Codex-to-Codex messaging outside herdr, are not implemented.
+
+## Launch receipts and partial failure
+
+Every input is checked before anything is created, so a bad request leaves no directory, pane or workspace behind.
+
+`--receipt PATH` writes a JSON launch receipt after every allocation. If a launch fails halfway, the receipt still names each pane, workspace, window and directory it created, the exact operation that failed and whether that failure was transient, blocked, denied or of unknown outcome. `--json` prints the receipt on stdout. `--correlate KEY=VALUE` echoes a caller's own IDs (run, workstream, generation) into it verbatim. Partial resources are kept for inspection and the printed teardown names only them. Format and field ownership: [`docs/coordination-contract-v1.md`](docs/coordination-contract-v1.md).
+
+## Matching replies to requests
+
+The latest message from a peer is not necessarily the answer to your latest request. `scripts/peer_correlation.py` prints a footer for a brief; the peer opens its reply with a `peer-reply:` line, and `peer-inbox.py --request-id` accepts only replies with that exact id (and target and generation, when given). It counts rejected stale or misaddressed replies by reason. A correlated reply proves the peer answered; deciding the work is complete stays with you.
 
 ## The loop
 
@@ -62,6 +87,19 @@ Then send each peer a brief that ends with your own address, and stop. A peer re
 | `scripts/peer-addr.py` | List live sessions, give a reason for each unreachable one, print your own reply address |
 | `scripts/peer-inbox.py` | Recover a peer reply from a transcript when the terminal truncated it |
 | `scripts/peer_registry.py` | Shared registry and liveness helpers used by the other scripts |
+| `scripts/peer_receipts.py` | The incremental launch receipt that `spawn-fleet.py --receipt/--json` writes |
+| `scripts/peer_correlation.py` | Request/reply correlation lines and the brief footer |
+| `docs/coordination-contract-v1.md` | Transport contract: who issues each field, receipt states, evidence levels |
+| `schemas/`, `examples/` | Launch receipt JSON Schema and provisional example receipts |
+| `tests/` | Deterministic tests against fake cmux/herdr executables |
+
+## Tests
+
+```bash
+python3 -m unittest discover -s tests
+```
+
+The tests put fake `cmux` and `herdr` executables on a reduced `PATH` and use temporary registry and transcript directories. They never reach a real multiplexer, server or session. They prove the scripts' mechanics; they are not a live compatibility check against a particular Claude Code, Codex, cmux or herdr build.
 
 ## Things that cost time to learn
 

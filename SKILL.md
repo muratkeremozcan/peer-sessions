@@ -26,7 +26,11 @@ Each argument is `NAME:DIR`. The script prints each session's `uds:` address and
 | `workspace` (default) | new workspaces in your window | 3+ peers, or work that runs for minutes. The user's current screen stays clean, and one tab click reaches the fleet. |
 | `window` | a new window, with the workspaces inside it | a big fleet, a screen recording, or a second monitor. |
 
-The script auto-detects its backend: cmux if it's on `PATH`, else herdr. On herdr, `--placement window` has no equivalent (herdr's CLI has workspaces and panes, not OS windows) and `--direction` supports only `right`/`down` — the script exits with a clear message rather than a crash if you ask for either. Everything else (`split`, `workspace`, addressing, teardown) works the same on both backends.
+`--backend auto|cmux|herdr` picks the multiplexer; an explicit choice wins. `auto` picks herdr when you run inside a herdr pane (`HERDR_ENV=1`), else cmux if it's on `PATH`, else herdr. The herdr backend refuses to run outside a herdr pane. On herdr, `--placement window` has no equivalent (herdr's CLI has workspaces and panes, not OS windows) and `--direction` supports only `right`/`down`. Everything else (`split`, `workspace`, addressing, teardown) works the same on both backends.
+
+`--runtime claude|codex` picks the agent CLI (default `claude`). `codex` starts native Codex sessions with `herdr agent start --kind codex`, so it needs the herdr backend; drive those peers with `herdr agent prompt/wait/read`. If the user asked for Codex peers and herdr is unavailable, say so. Never launch Claude instead.
+
+The script checks the whole request before it creates anything. A bad name, a duplicate, a missing `--dirs existing` directory or an unsupported backend/runtime combination exits 2 with nothing created. If a backend operation fails halfway, it exits 3, keeps what it made, and prints exactly which panes/workspaces exist and how the failure ended: `blocked` (an approval prompt: read it and ask the user), `denied` (tell the user; never route around it), `unknown` (inspect before you retry) or `failed`. Pass `--receipt PATH` or `--json` when a tool needs that inventory; `--correlate run_id=...` echoes your own IDs into it. Format: `docs/coordination-contract-v1.md`.
 
 Every other flag (`--direction`, `--focus`, `--per-workspace`, `--model`, `--claude-arg`, …) and the per-placement edge cases: read `references/placement.md`.
 
@@ -62,6 +66,14 @@ SendMessage(to: "uds:/tmp/cc-socks/4667.sock", message: "...")
 ```
 
 Ask for a fixed reply format ("<name> done: <URL>") so a large fleet collates with no work, and add a scope guard ("research and write only, do not touch <repo>") — peers obey it. Two rules: `success: true` means the message arrived, not that the peer did the work. A send is one-way — say clearly if you want a reply.
+
+When you will send the same peer more than one request, or a stale answer would mislead you, end the brief with a correlation footer and match the reply against it:
+
+```bash
+python3 ~/.claude/skills/peer-sessions/scripts/peer_correlation.py --id r2 --target orbits
+```
+
+The peer opens its reply with `peer-reply: id=r2 target=orbits`. `peer-inbox.py --request-id r2` (or `--stdin --request-id r2` on text from `herdr agent read`) accepts only that reply; an older answer to `r1` cannot satisfy `r2`. A matched reply means the peer answered this request. Whether the work is done is still yours to check.
 
 ## 3. End your turn
 

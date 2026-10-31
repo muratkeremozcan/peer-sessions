@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ray-amjad/peer-sessions/schemas/launch-receipt.v1.schema.json",
+  "title": "peer-sessions launch receipt, version 1",
+  "type": "object",
+  "required": [
+    "schema", "schema_version", "contract", "launch_id", "created_at", "updated_at",
+    "backend", "runtime", "placement", "correlation", "status", "resources", "sessions",
+    "failure"
+  ],
+  "properties": {
+    "schema": { "const": "peer-sessions/launch-receipt" },
+    "schema_version": { "const": 1 },
+    "contract": {
+      "type": "object",
+      "required": ["name", "version", "status"],
+      "properties": {
+        "name": { "const": "peer-sessions-transport" },
+        "version": { "const": "1" },
+        "status": { "enum": ["pending", "agreed"] }
+      }
+    },
+    "launch_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "backend": { "enum": ["cmux", "herdr"] },
+    "runtime": { "enum": ["claude", "codex"] },
+    "placement": { "enum": ["split", "workspace", "window"] },
+    "correlation": {
+      "description": "Caller-issued fields, echoed verbatim.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "status": { "enum": ["launching", "ready", "incomplete", "partial", "failed"] },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "id", "operation", "owned", "session", "created_at"],
+        "properties": {
+          "kind": { "enum": ["directory", "window", "workspace", "surface", "pane"] },
+          "id": { "type": "string" },
+          "operation": { "type": "string" },
+          "owned": { "const": true },
+          "session": { "type": ["string", "null"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "workspace": { "type": ["string", "null"] },
+          "window": { "type": ["string", "null"] },
+          "parent": { "type": "string" },
+          "ref": { "type": "string" },
+          "created_root": { "type": "string" }
+        }
+      }
+    },
+    "sessions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "runtime", "cwd", "directory_created", "state", "identity"],
+        "properties": {
+          "name": { "type": "string" },
+          "runtime": { "enum": ["claude", "codex"] },
+          "cwd": { "type": "string" },
+          "directory_created": { "type": "boolean" },
+          "state": {
+            "enum": [
+              "pending", "start_requested", "started", "ready", "not_ready",
+              "blocked", "denied", "unknown", "failed"
+            ]
+          },
+          "identity": {
+            "type": "object",
+            "description": "Only fields the backend actually exposed.",
+            "properties": {
+              "agent_kind": { "type": "string" },
+              "pane_id": { "type": "string" },
+              "terminal_id": { "type": "string" },
+              "workspace_id": { "type": "string" },
+              "tab_id": { "type": "string" },
+              "workspace": { "type": "string" },
+              "surface": { "type": "string" },
+              "pid": { "type": "integer" },
+              "session_id": { "type": "string" },
+              "proc_start": { "type": ["string", "number"] },
+              "messaging_socket": { "type": "string" },
+              "registry_candidates": { "type": "integer" },
+              "observed_occupant": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "failure": {
+      "type": ["object", "null"],
+      "required": ["operation", "session", "backend", "command", "code", "outcome", "exit_code", "message", "at"],
+      "properties": {
+        "operation": { "type": "string" },
+        "session": { "type": ["string", "null"] },
+        "backend": { "enum": ["cmux", "herdr", null] },
+        "command": { "type": ["array", "null"], "items": { "type": "string" } },
+        "code": { "type": ["string", "null"] },
+        "outcome": { "enum": ["transient", "blocked", "denied", "unknown", "failed"] },
+        "exit_code": { "type": ["integer", "null"] },
+        "message": { "type": "string" },
+        "at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}
