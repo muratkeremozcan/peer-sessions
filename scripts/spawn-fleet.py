@@ -508,16 +508,20 @@ def build_workspaces_herdr(specs, argv_for, prefix, per_workspace, direction, fo
             # did not: each names something that now exists.
             workspace_id = optional_id(result, "workspace", "workspace_id")
             root_pane_id = optional_id(result, "root_pane", "pane_id")
+            # Stage both before the one fallible write, so a receipt failure
+            # cannot drop the second.
             if workspace_id:
                 layout["workspaces"].append(workspace_id)
                 receipt.add_resource(
-                    "workspace", workspace_id, "herdr workspace create", session=first_name
+                    "workspace", workspace_id, "herdr workspace create", session=first_name,
+                    flush=False,
                 )
             if root_pane_id:
                 receipt.add_resource(
                     "pane", root_pane_id, "herdr workspace create", session=first_name,
-                    workspace=workspace_id, parent=workspace_id,
+                    workspace=workspace_id, parent=workspace_id, flush=False,
                 )
+            receipt.flush()
             absent = [
                 path
                 for path, value in (
@@ -797,11 +801,11 @@ def create_directories(specs, missing, receipt):
             failure.session = name
             receipt.update_session(name, "denied" if failure.outcome == "denied" else "failed")
             raise failure from error
+        # Update every in-memory fact first; add_resource's flush can fail.
+        receipt.session(name)["directory_created"] = True
         receipt.add_resource(
             "directory", directory, "mkdir", session=name, created_root=created_root
         )
-        receipt.session(name)["directory_created"] = True
-        receipt.flush()
 
 
 def registry_identity(record):
@@ -839,10 +843,18 @@ def attach_registry_identities(receipt, specs, before):
         return
     for name, directory in specs:
         record, count = bind_registry(name, directory, before)
+        identity = receipt.session(name)["identity"]
         if record is not None:
+            identity.pop("registry_candidates", None)
             receipt.update_session(name, **registry_identity(record))
-        elif count > 1:
-            receipt.update_session(name, registry_candidates=count)
+        else:
+            # Drop any earlier binding: it is no longer the only candidate.
+            for key in ("pid", "session_id", "proc_start", "messaging_socket"):
+                identity.pop(key, None)
+            if count > 1:
+                receipt.update_session(name, registry_candidates=count)
+            else:
+                receipt.flush()
 
 
 def cleanup_block(receipt, layout, backend):
@@ -1037,7 +1049,15 @@ def validate(args, parser):
         correlation = parse_correlation(args.correlate)
     except ValueError as error:
         parser.error(str(error))
-
+    if args.receipt:
+        receipt_path = os.path.realpath(args.receipt)
+        for name, directory in specs:
+            real = os.path.realpath(directory)
+            if receipt_path == real or real.startswith(receipt_path + os.sep):
+                parser.error(
+                    f"--receipt {args.receipt} is session {name}'s directory or one of "
+                    "its parents; put the receipt somewhere else"
+                )
     caller = caller_context(backend)
     if placement == "split":
         if backend == "herdr" and not caller.get("surface"):
@@ -1180,7 +1200,9 @@ def wait_for_readiness(args, plan, receipt):
 
     def poll():
         for name, directory in specs:
-            if seen.get(name, (None,))[0] in SETTLED:
+            # herdr states settle. A cmux binding is re-derived on every poll:
+            # a second matching record can appear at any time.
+            if backend == "herdr" and seen.get(name, (None,))[0] in SETTLED:
                 continue
             if backend == "herdr":
                 expected = receipt.session(name)["identity"]
@@ -1205,6 +1227,12 @@ def wait_for_readiness(args, plan, receipt):
 
 def record_readiness(receipt, plan, seen):
     backend = plan["backend"]
+    if backend == "cmux":
+        # One final candidate set decides both readiness and the PID binding.
+        for name, directory in plan["specs"]:
+            record, _ = bind_registry(name, directory, plan["before"])
+            live = record is not None and socket_live(record.get("messagingSocketPath"))
+            seen[name] = ("ready", record, None) if live else ("starting", None, None)
     attach_registry_identities(receipt, plan["specs"], plan["before"])
     for name, _ in plan["specs"]:
         state, observed, error = seen.get(name, ("starting", None, None))
@@ -1214,7 +1242,9 @@ def record_readiness(receipt, plan, seen):
         elif state == "ready":
             receipt.update_session(name, "ready", **registry_identity(observed))
         elif state == "blocked":
+            # herdr_readiness checked identity before reporting blocked.
             receipt.update_session(name, "blocked", **agent_identity(observed))
+            reconcile_pane(receipt, name, observed, verified=True)
         elif state == "mismatch":
             # The name now labels a different occupant. Keep both identities.
             receipt.update_session(

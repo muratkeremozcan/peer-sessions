@@ -151,5 +151,40 @@ class ReceiptFile(unittest.TestCase):
         self.assertEqual(os.listdir(directory), [])
 
 
+class ReceiptWriteFailures(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.mkdtemp()
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.directory))
+        self.path = os.path.join(self.directory, "r.json")
+
+    def test_unlink_failure_cannot_mask_the_receipt_error(self):
+        receipt = receipts.LaunchReceipt("herdr", "claude", "split", path=self.path)
+        receipt.add_session("a", "/tmp/a", False)
+        with mock.patch.object(receipts.os, "replace", side_effect=PermissionError("ro")), \
+                mock.patch.object(receipts.os, "unlink", side_effect=PermissionError("ro")):
+            with self.assertRaises(receipts.ReceiptError):
+                receipt.add_resource("pane", "w:p2", "herdr pane split", session="a")
+        self.assertIn("cannot write receipt", receipt.data["persistence_error"])
+        self.assertEqual(receipt.data["resources"][0]["id"], "w:p2")
+        # Later updates stay in memory without raising again.
+        receipt.update_session("a", "started")
+
+    def test_mkdir_facts_survive_a_receipt_failure(self):
+        receipt = receipts.LaunchReceipt("herdr", "claude", "split", path=self.path)
+        target = os.path.join(self.directory, "work", "a")
+        receipt.add_session("a", target, False)
+        os.makedirs(os.path.dirname(target))
+        # The receipt's directory turns read-only; work/ stays writable.
+        os.chmod(self.directory, 0o500)
+        self.addCleanup(os.chmod, self.directory, 0o700)
+        if os.access(self.directory, os.W_OK):
+            self.skipTest("running with privileges that ignore directory modes")
+        with self.assertRaises(receipts.ReceiptError):
+            spawn.create_directories([("a", target)], {target}, receipt)
+        self.assertTrue(os.path.isdir(target))
+        self.assertEqual(receipt.data["resources"][0]["id"], target)
+        self.assertTrue(receipt.session("a")["directory_created"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -678,5 +678,61 @@ class HerdrIdentityDrift(FleetCase):
         self.assertIn("workspace.workspace_id", receipt["failure"]["message"])
 
 
+class ReReviewRegressions(FleetCase):
+    def test_ambiguity_after_first_ready_poll_unbinds_the_pid(self):
+        self.install("cmux")
+        self.set_scenario(
+            caller={"workspace_id": "W", "surface_id": "S"},
+            duplicate_on={"match": ["select-workspace"], "name": "alpha",
+                          "cwd": self.dir("a")},
+        )
+        result = self.spawn("--json", "--timeout", "5", f"alpha:{self.dir('a')}",
+                            herdr_env=False)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        session = receipt_from(result)["sessions"][0]
+        self.assertEqual(session["state"], "not_ready")
+        self.assertEqual(session["identity"]["registry_candidates"], 2)
+        self.assertNotIn("pid", session["identity"])
+        self.assertNotIn("kill ", result.stderr)
+
+    def test_blocked_moved_pane_moves_the_close_target(self):
+        self.install("herdr")
+        self.set_scenario(
+            status={"alpha": "blocked"},
+            occupant={"alpha": {"pane_id": "wOTHER:p9", "workspace_id": "wOTHER"}},
+        )
+        result = self.spawn("--placement", "split", "--timeout", "10",
+                            f"alpha:{self.dir('a')}")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("herdr pane close wOTHER:p9", result.stdout)
+        self.assertNotIn("herdr pane close wT:p2", result.stdout)
+
+    def test_receipt_failure_during_workspace_create_keeps_both_ids(self):
+        self.install("herdr")
+        receipts = os.path.join(self.root, "receipts")
+        os.makedirs(receipts)
+        self.addCleanup(os.chmod, receipts, 0o700)
+        self.set_scenario(chmod={"match": ["workspace", "create"], "path": receipts,
+                                 "mode": 0o500})
+        result = self.spawn("--json", "--receipt", os.path.join(receipts, "r.json"),
+                            f"alpha:{self.dir('a')}")
+        if os.access(receipts, os.W_OK):
+            self.skipTest("running with privileges that ignore directory modes")
+        self.assertEqual(result.returncode, 3, result.stderr)
+        kinds = [(r["kind"], r["id"]) for r in receipt_from(result)["resources"]]
+        self.assertIn(("workspace", "wF1"), kinds)
+        self.assertIn(("pane", "wF1:p1"), kinds)
+
+    def test_receipt_path_cannot_be_a_session_directory_or_its_parent(self):
+        self.install("herdr")
+        for receipt, spec in ((self.dir("a"), f"alpha:{self.dir('a')}"),
+                              (self.dir("x"), f"alpha:{self.dir('x', 'y')}")):
+            with self.subTest(receipt=receipt):
+                result = self.spawn("--receipt", receipt, spec)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("put the receipt somewhere else", result.stderr)
+                self.assertEqual(os.listdir(self.work), [])
+
+
 if __name__ == "__main__":
     unittest.main()

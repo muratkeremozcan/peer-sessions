@@ -17,6 +17,8 @@ Scenario ($FAKE_STATE/scenario.json):
   register_twice: true -> it writes two records with the same name and cwd
   foreign: {"name", "cwd", "pid"} -> the first launch also writes this record
   chmod:  {"match": [...], "path": p, "mode": 320} -> chmod p when a call matches
+  duplicate_on: {"match": [...], "name", "cwd"} -> write one more matching
+          registry record (pid $FAKE_PID) when a call matches
 """
 
 import json
@@ -233,6 +235,9 @@ def main():
     chmod = scenario.get("chmod")
     if chmod and contains_in_order(ARGS, chmod["match"]):
         os.chmod(chmod["path"], chmod["mode"])
+    duplicate = scenario.get("duplicate_on")
+    if duplicate and contains_in_order(ARGS, duplicate["match"]):
+        write_record(duplicate["name"], duplicate["cwd"], int(os.environ["FAKE_PID"]))
     apply_rules(scenario)
     if TOOL == "herdr":
         herdr()

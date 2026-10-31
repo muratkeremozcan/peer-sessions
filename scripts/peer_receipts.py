@@ -116,8 +116,12 @@ class LaunchReceipt:
         )
         self.flush()
 
-    def add_resource(self, kind, resource_id, operation, session=None, **extra):
-        """Record a resource this launch created, the moment it exists."""
+    def add_resource(self, kind, resource_id, operation, session=None, flush=True, **extra):
+        """Record a resource this launch created, the moment it exists.
+
+        flush=False stages it in memory so several ids from one backend answer
+        are all recorded before the next (fallible) write.
+        """
         resource = {
             "kind": kind,
             "id": resource_id,
@@ -128,7 +132,8 @@ class LaunchReceipt:
         }
         resource.update({key: value for key, value in extra.items() if value is not None})
         self.data["resources"].append(resource)
-        self.flush()
+        if flush:
+            self.flush()
         return resource
 
     def owned(self, kind):
@@ -177,9 +182,12 @@ class LaunchReceipt:
                 stream.write(self.to_json() + "\n")
             os.replace(temp, self.path)
         except OSError as error:
-            if temp and os.path.exists(temp):
-                os.unlink(temp)
             self.persist_failed = True
+            if temp:
+                try:
+                    os.unlink(temp)
+                except OSError:
+                    pass  # reporting the write failure matters more
             failure = ReceiptError(self.path, error)
             self.data["persistence_error"] = failure.message
             raise failure from error
