@@ -60,7 +60,13 @@ CORRELATION_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 RUNTIMES = ("claude", "codex")
 # herdr's documented default for `agent start` readiness.
 HERDR_START_TIMEOUT_MS = 30000
-DENIAL = re.compile(r"permission|denied|forbidden|unauthori[sz]ed|not allowed", re.I)
+DENIAL = re.compile(
+    r"permission|denied|forbidden|unauthori[sz]ed|not allowed|not permitted|EPERM|EACCES|sandbox"
+    r"|auth_required|authentication required|invalid password",
+    re.I,
+)
+# cmux CLI wording when its socket gave no complete answer: the command may have run.
+NO_ANSWER = re.compile(r"command timed out|socket closed before (complete )?reply", re.I)
 
 EXIT_NOT_READY = 1
 EXIT_LAUNCH_FAILED = 3
@@ -126,8 +132,13 @@ def cmux(*args, timeout=60):
     except OSError as error:
         raise BackendError("cmux", args, str(error), code="exec_failed") from error
     output = (result.stdout + result.stderr).strip()
-    if result.returncode != 0 or output.startswith("Error"):
-        outcome = "denied" if DENIAL.search(output) else "failed"
+    if result.returncode != 0 or output[:5].lower() == "error":
+        if DENIAL.search(output):
+            outcome = "denied"
+        elif NO_ANSWER.search(output):
+            outcome = "unknown"
+        else:
+            outcome = "failed"
         raise BackendError("cmux", args, output, outcome=outcome, exit_code=result.returncode)
     return output
 
@@ -708,7 +719,13 @@ def caller_context(backend):
         }
     try:
         payload = json.loads(cmux("identify"))
-    except (BackendError, ValueError):
+    except BackendError as error:
+        # A refusal or a missing answer does not mean "outside cmux"; reading it
+        # that way would steer the launch around the refusal.
+        if error.outcome in ("denied", "unknown"):
+            raise
+        return {}
+    except ValueError:
         return {}
     caller = payload.get("caller") or {}
     return {
@@ -1062,7 +1079,14 @@ def validate(args, parser):
                     f"--receipt {args.receipt} is session {name}'s directory or one of "
                     "its parents; put the receipt somewhere else"
                 )
-    caller = caller_context(backend)
+    try:
+        caller = caller_context(backend)
+    except BackendError as error:
+        verb = "refused" if error.outcome == "denied" else "gave no usable answer to"
+        parser.error(
+            f"cmux {verb} the caller check (cmux identify): {error.message}. "
+            "Nothing was created. Tell the user; do not route around it."
+        )
     if placement == "split":
         if backend == "herdr" and not caller.get("surface"):
             parser.error(
