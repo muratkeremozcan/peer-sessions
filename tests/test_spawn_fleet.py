@@ -343,7 +343,9 @@ class StartupFailureKinds(FleetCase):
         self.assertEqual(receipt_from(result)["sessions"][0]["state"], "ready")
 
     def test_blocked_startup_is_not_retried(self):
-        result = self.run_with({"stderr": self.envelope("agent_not_ready", "approval UI")})
+        result = self.run_with({
+            "stderr": self.envelope("agent_not_ready", "approval UI"), "leave_agent": "blocked",
+        })
         self.assertEqual(result.returncode, 1)
         self.assertEqual(len(self.starts()), 1)
         receipt = receipt_from(result)
@@ -359,6 +361,7 @@ class StartupFailureKinds(FleetCase):
         self.set_scenario(rules=[{
             "tool": "herdr", "match": ["agent", "start", "alpha"],
             "stderr": self.envelope("agent_not_ready", "Do you trust this folder?"), "exit": 1,
+            "leave_agent": "blocked",
         }])
         result = self.spawn(
             "--placement", "workspace", "--per-workspace", "1", "--json", "--timeout", "30",
@@ -374,6 +377,15 @@ class StartupFailureKinds(FleetCase):
         self.assertIn("! alpha", result.stderr)
         for workspace in [r["id"] for r in receipt["resources"] if r["kind"] == "workspace"]:
             self.assertIn(f"herdr workspace close {workspace}", result.stderr)
+
+    def test_agent_gone_after_a_blocked_start_is_not_reported_blocked(self):
+        # The user stopped it, so herdr dropped the name: no prompt waits anymore.
+        result = self.run_with({"stderr": self.envelope("agent_not_ready", "approval UI")})
+        self.assertEqual(result.returncode, 1)
+        session = receipt_from(result)["sessions"][0]
+        self.assertEqual(session["state"], "not_ready")
+        self.assertEqual(session["readiness_error"]["code"], "agent_not_ready")
+        self.assertNotIn("! alpha", result.stderr)
 
     def test_permission_denial_is_not_retried_or_routed_around(self):
         result = self.run_with({"stderr": self.envelope("permission_denied", "PermissionDenied")})

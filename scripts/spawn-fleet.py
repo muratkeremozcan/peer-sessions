@@ -1225,12 +1225,8 @@ def wait_for_readiness(args, plan, receipt):
             if backend == "herdr" and seen.get(name, (None,))[0] in SETTLED:
                 continue
             if backend == "herdr":
-                entry = receipt.session(name)
-                observed = herdr_readiness(name, args.runtime, entry["identity"])
-                if entry["state"] == "blocked" and observed[0] == "missing":
-                    # Blocked at start: herdr may list no agent until the prompt clears.
-                    observed = ("blocked", None, None)
-                seen[name] = observed
+                expected = receipt.session(name)["identity"]
+                seen[name] = herdr_readiness(name, args.runtime, expected)
                 continue
             record, count = bind_registry(name, directory, before)
             if record is not None and socket_live(record.get("messagingSocketPath")):
