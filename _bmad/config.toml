@@ -1,0 +1,18 @@
+[core]
+project_name = "peer-sessions"
+output_folder = "{project-root}/_bmad-output"
+
+[modules.tea]
+test_artifacts = "{project-root}/_bmad-output/test-artifacts"
+tea_use_playwright_utils = "true"
+tea_use_pactjs_utils = "true"
+tea_pact_mcp = "mcp"
+tea_browser_automation = "auto"
+tea_execution_mode = "auto"
+tea_capability_probe = "true"
+test_stack_type = "auto"
+test_framework = "auto"
+auto_validate = "true"
+auto_heal_failures = "true"
+max_healing_iterations = "3"
+use_mcp_healing = "true"
