@@ -47,7 +47,7 @@ Schema: [`schemas/launch-receipt.v1.schema.json`](../schemas/launch-receipt.v1.s
   `directory_created` turns true only after the directory exists.
 - `failure`: the exact operation, backend (`cmux`, `herdr`, `filesystem` for a directory, or `receipt` for a receipt-file write), error code, exit status, message and outcome:
   - `transient`: known short race (herdr `agent_pane_busy`); retried for a few seconds, never reported as a final outcome unless retries run out.
-  - `blocked`: the agent stopped at an approval or question UI.
+  - `blocked`: the agent stopped at an approval or question UI. From `agent start` this is recorded on that session (state `blocked`, the start answer in `readiness_error`) and the launch continues, so the receipt ends `incomplete` and `failure` stays empty.
   - `denied`: the backend or OS refused. Report it; do not route around it.
   - `unknown`: no usable answer. The operation may have happened. Reconcile before retrying.
   - `failed`: the backend rejected the operation.

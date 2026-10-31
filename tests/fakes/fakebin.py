@@ -9,6 +9,9 @@ Scenario ($FAKE_STATE/scenario.json):
             "exit": 1, "stderr": "...", "stdout": "..."}]
           First rule whose tokens all appear, in order, in argv wins.
           "skip": N lets the first N matching calls through to the normal fake.
+          "leave_agent": "blocked" on an `agent start` rule keeps the agent
+          listed with that status after the error, as herdr does for an agent
+          stopped at a prompt.
   agents: {"name": {...}} live herdr agents before the launch
   status: {"name": "blocked"} agent_status reported by `agent get`
   occupant: {"name": {...}} fields to override in `agent get` (identity drift)
@@ -76,9 +79,26 @@ def apply_rules(scenario):
         save("rules-used.json", used)
         if count < skip:
             continue
+        if rule.get("leave_agent") and ARGS[:2] == ["agent", "start"]:
+            leave_agent(rule["leave_agent"])
         sys.stdout.write(rule.get("stdout", ""))
         sys.stderr.write(rule.get("stderr", ""))
         sys.exit(rule.get("exit", 1))
+
+
+def leave_agent(status):
+    name, pane_id = ARGS[2], ARGS[ARGS.index("--pane") + 1]
+    agents = load("agents.json", load("scenario.json", {}).get("agents", {}))
+    agents[name] = {
+        "agent": ARGS[ARGS.index("--kind") + 1],
+        "agent_status": status,
+        "interactive_ready": False,
+        "name": name,
+        "pane_id": pane_id,
+        "terminal_id": f"term_{name}",
+        "workspace_id": pane_id.split(":")[0],
+    }
+    save("agents.json", agents)
 
 
 def counter(name):

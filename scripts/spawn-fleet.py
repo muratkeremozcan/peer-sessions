@@ -439,7 +439,12 @@ def start_session_herdr(name, pane_id, argv, receipt, retry_seconds=5.0):
     A pane freshly returned by `pane split`/`workspace create` is not always
     an "available shell" the instant this runs next — herdr is still settling
     the new pty. Retry briefly on that one race (agent_pane_busy). Every other
-    failure, including a blocked startup or denial, is final here.
+    failure is final here.
+
+    A blocked startup (an approval or folder-trust question in the pane) is a
+    state of this one session, not a failed launch: record it and let the rest
+    of the fleet start, so one human pass can answer every prompt. The prompt
+    is the user's to answer; nothing here answers it.
     """
     kind = argv[0]
     receipt.update_session(name, "start_requested", pane_id=pane_id)
@@ -455,6 +460,10 @@ def start_session_herdr(name, pane_id, argv, receipt, retry_seconds=5.0):
             result = herdr(*command, timeout=HERDR_START_TIMEOUT_MS / 1000 + 30)
             break
         except BackendError as error:
+            if error.outcome == "blocked":
+                receipt.session(name)["readiness_error"] = error_record(error)
+                receipt.update_session(name, "blocked")
+                return
             if error.outcome != "transient" or time.time() >= deadline:
                 raise
             time.sleep(0.3)
@@ -605,7 +614,13 @@ def herdr_readiness(name, runtime, expected=None):
         return "blocked", agent, None
     ready_flag = agent.get("interactive_ready")
     if status in ("idle", "done", "working") and (
-        ready_flag or (ready_flag is None and status in ("idle", "done"))
+        ready_flag
+        or (
+            # A missing flag counts only once herdr has finished the launch.
+            ready_flag is None
+            and not agent.get("launch_pending")
+            and status in ("idle", "done")
+        )
     ):
         return "ready", agent, None
     return "starting", agent, None
@@ -1306,7 +1321,8 @@ def report_readiness(receipt, plan, args):
         elif state == "blocked":
             say(
                 f"! {name:<24} blocked at an approval or question prompt "
-                f"(pane {identity.get('pane_id', '?')})"
+                f"(pane {identity.get('pane_id', '?')}). Read it and ask the user; "
+                "never answer it for them"
             )
         elif state == "denied":
             say(
