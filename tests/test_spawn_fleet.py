@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import unittest
+from unittest import mock
 
 from helpers import FleetCase, load_script
 from schema_check import errors, load_schema
@@ -319,7 +320,7 @@ class PartialLaunchInventory(FleetCase):
             rules=[
                 {
                     "tool": "herdr",
-                    "match": ["workspace", "create", "--label", "fleet-2"],
+                    "match": ["workspace", "create", "--label", "second"],
                     "stderr": json.dumps({"error": {"code": "workspace_create_failed",
                                                     "message": "no"}}),
                 }
@@ -851,6 +852,164 @@ class ReReviewRegressions(FleetCase):
                 self.assertEqual(result.returncode, 2)
                 self.assertIn("put the receipt somewhere else", result.stderr)
                 self.assertEqual(os.listdir(self.work), [])
+
+
+
+class BranchNames(unittest.TestCase):
+    """Branch names become session names herdr accepts and a person recognises."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.fleet = load_script("spawn_fleet_names", "spawn-fleet.py")
+
+    def test_slash_case_and_turkish_letters_fold(self):
+        cases = {
+            "t27-magaza-temizlik": "t27-magaza-temizlik",
+            "feat/T27-Mağaza_Temizlik": "feat-t27-magaza_temizlik",
+            "fix/KARARSIZ-ılık-şüphe": "fix-kararsiz-ilik-suphe",
+            "feat//double--dash/": "feat-double-dash",
+        }
+        for branch, expected in cases.items():
+            with self.subTest(branch=branch):
+                self.assertEqual(self.fleet.name_from_branch(branch), expected)
+
+    def test_long_branch_is_cut_at_a_word_inside_herdr_limit(self):
+        name = self.fleet.name_from_branch("kararsiz-telefon-kaydi-yeniden-deneme-akisi")
+        self.assertEqual(name, "kararsiz-telefon-kaydi-yeniden")
+        self.assertLessEqual(len(name), 32)
+
+    def test_branch_without_a_leading_letter_has_no_name(self):
+        self.assertIsNone(self.fleet.name_from_branch("27-hotfix"))
+        self.assertIsNone(self.fleet.name_from_branch("///"))
+
+
+class SessionNaming(FleetCase):
+    """Workspace titles, agent names and resume names all read the same."""
+
+    def checkout(self, name, branch):
+        directory = self.dir(name)
+        os.makedirs(directory)
+        for command in (
+            ["git", "init", "-q"],
+            ["git", "symbolic-ref", "HEAD", f"refs/heads/{branch}"],
+        ):
+            subprocess.run(command, cwd=directory, check=True, capture_output=True,
+                           env={"PATH": "/usr/bin:/bin", "HOME": self.root})
+        return directory
+
+    def labels(self):
+        return [
+            call[call.index("--label") + 1]
+            for call in self.calls_matching("herdr", "workspace", "create")
+        ]
+
+    def test_directory_alone_names_session_and_workspace_after_its_branch(self):
+        self.install("herdr")
+        directory = self.checkout("wt", "feat/T27-Mağaza-Temizlik")
+        result = self.spawn("--json", "--per-workspace", "1", "--timeout", "5", directory)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        receipt = receipt_from(result)
+        self.assertEqual(receipt["sessions"][0]["name"], "feat-t27-magaza-temizlik")
+        self.assertEqual(self.labels(), ["feat-t27-magaza-temizlik"])
+        (start,) = self.calls_matching("herdr", "agent", "start")
+        self.assertEqual(start[3], "feat-t27-magaza-temizlik")
+        self.assertEqual(start[start.index("--name") + 1], "feat-t27-magaza-temizlik")
+        self.assertIn("named after branch feat/T27-Mağaza-Temizlik", result.stderr)
+        self.assertIn(
+            f"cd {directory} && claude --resume feat-t27-magaza-temizlik", result.stderr
+        )
+
+    def test_directory_without_a_branch_is_rejected_before_anything_exists(self):
+        self.install("herdr")
+        os.makedirs(self.dir("plain"))
+        result = self.spawn(self.dir("plain"), f"other:{self.dir('o')}")
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("no checked-out git branch", result.stderr)
+        self.assertEqual(self.mutating_calls(), [])
+        self.assertFalse(os.path.exists(self.dir("o")))
+
+    def test_shared_workspace_is_titled_with_both_names(self):
+        self.install("herdr")
+        result = self.spawn("--timeout", "5", f"alpha:{self.dir('a')}",
+                            f"beta:{self.dir('b')}", f"gamma:{self.dir('c')}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.labels(), ["alpha + beta", "gamma"])
+
+    def test_explicit_prefix_keeps_numbered_titles(self):
+        self.install("herdr")
+        result = self.spawn("--prefix", "fleet", "--per-workspace", "1", "--timeout", "5",
+                            f"alpha:{self.dir('a')}", f"beta:{self.dir('b')}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.labels(), ["fleet-1", "fleet-2"])
+
+    def test_cmux_workspace_is_titled_with_the_session_name(self):
+        self.install("cmux")
+        self.set_scenario(caller={"workspace_id": "W", "surface_id": "S", "window_id": "WIN"})
+        result = self.spawn("--per-workspace", "1", "--timeout", "5",
+                            f"orbits:{self.dir('o')}", herdr_env=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        (create,) = self.calls_matching("cmux", "--id-format", "both", "new-workspace")
+        self.assertEqual(create[create.index("--name") + 1], "orbits")
+
+    def test_codex_session_takes_its_name_for_resume(self):
+        self.install("herdr")
+        result = self.spawn("--runtime", "codex", "--json", "--timeout", "5",
+                            f"rev:{self.dir('a')}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        (prompt,) = self.calls_matching("herdr", "agent", "prompt")
+        # Sent to the verified pane, not the reusable name.
+        self.assertEqual(prompt[3:5], ["wF1:p1", "/rename rev"])
+        self.assertIn("--wait", prompt)
+        session = receipt_from(result)["sessions"][0]
+        self.assertEqual(session["identity"]["session_title"], "rev")
+        self.assertIn(f"cd {self.dir('a')} && codex resume rev", result.stderr)
+
+    def test_codex_rename_that_does_not_settle_is_reported_not_fatal(self):
+        self.install("herdr")
+        self.set_scenario(prompt_status="blocked")
+        result = self.spawn("--runtime", "codex", "--json", "--timeout", "5",
+                            f"rev:{self.dir('a')}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        session = receipt_from(result)["sessions"][0]
+        self.assertNotIn("session_title", session["identity"])
+        self.assertEqual(session["title_error"]["code"], "rename_not_settled")
+        self.assertIn("Codex kept its default thread name", result.stderr)
+        self.assertIn(f"cd {self.dir('a')} && codex resume   # rev: Codex did not take",
+                      result.stderr)
+
+    def test_rename_answered_by_another_terminal_is_not_recorded(self):
+        self.install("herdr")
+        self.set_scenario(prompt_answer={"terminal_id": "term_someone_else"})
+        result = self.spawn("--runtime", "codex", "--json", "--timeout", "5",
+                            f"rev:{self.dir('a')}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        session = receipt_from(result)["sessions"][0]
+        self.assertNotIn("session_title", session["identity"])
+        self.assertEqual(session["title_error"]["code"], "occupant_changed")
+
+    def test_name_taken_by_another_agent_before_rename_gets_no_input(self):
+        fleet = load_script("spawn_fleet_rename", "spawn-fleet.py")
+        receipt = mock.Mock()
+        receipt.data = {"sessions": [{
+            "name": "rev", "state": "ready",
+            "identity": {"pane_id": "w1:p1", "terminal_id": "term_rev"},
+        }]}
+        other = {"name": "rev", "pane_id": "w9:p1", "terminal_id": "term_other"}
+        with mock.patch.object(fleet, "herdr_readiness",
+                               return_value=("mismatch", other, None)) as check, \
+                mock.patch.object(fleet, "herdr") as herdr:
+            fleet.name_codex_sessions(receipt)
+        check.assert_called_once_with("rev", "codex", receipt.data["sessions"][0]["identity"])
+        herdr.assert_not_called()
+        session = receipt.data["sessions"][0]
+        self.assertEqual(session["title_error"]["code"], "occupant_changed")
+        self.assertNotIn("session_title", session["identity"])
+
+    def test_claude_runtime_sends_no_rename(self):
+        self.install("herdr")
+        result = self.spawn("--timeout", "5", f"impl:{self.dir('a')}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.calls_matching("herdr", "agent", "prompt"), [])
 
 
 if __name__ == "__main__":

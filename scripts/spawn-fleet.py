@@ -14,6 +14,11 @@ starts native Codex sessions through `herdr agent start --kind codex`, so it is
 herdr-only; it never falls back to Claude. Claude-only flags
 (`--claude-arg`, `--permission-mode`) are refused for codex.
 
+Names: each spec is NAME:DIR, or DIR alone to name the session after the git
+branch checked out there. The name titles the workspace (unless --prefix asks
+for numbered titles), names the agent (`claude --name`, Codex `/rename`), and
+is what the printed resume commands use after a reboot.
+
 Every input is validated before anything is created: no directory, pane,
 workspace or window exists until the whole request is known to be launchable.
 
@@ -47,6 +52,7 @@ import shutil
 import subprocess
 import sys
 import time
+import unicodedata
 
 from peer_receipts import LaunchReceipt, ReceiptError
 from peer_registry import live_records, normalized_name, record_identity, socket_live
@@ -57,6 +63,10 @@ HERDR_DIRECTIONS = {"right", "down"}
 # herdr's own rule for agent names (`herdr --skill`).
 HERDR_NAME = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
 CORRELATION_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
+# Letters NFKD cannot fold to ASCII on their own (Turkish dotless i).
+ASCII_FOLD = str.maketrans({"ı": "i", "İ": "I"})
+# How long Codex gets to apply `/rename` before the launch reports it unnamed.
+CODEX_RENAME_TIMEOUT_MS = 15000
 RUNTIMES = ("claude", "codex")
 # herdr's documented default for `agent start` readiness.
 HERDR_START_TIMEOUT_MS = 30000
@@ -226,6 +236,15 @@ def build_splits(specs, argv_for, caller, direction, focus, receipt):
     return layout
 
 
+def workspace_label(group, prefix, group_index):
+    """Title a workspace after the sessions it holds, so it reads the same as
+    the session names (and the branches they were named after). An explicit
+    --prefix keeps the numbered `<prefix>-<n>` titles."""
+    if prefix:
+        return f"{prefix}-{group_index}"
+    return " + ".join(name for name, _ in group)
+
+
 def build_workspaces(specs, argv_for, window, prefix, per_workspace, direction, focus, receipt):
     """Put each group of sessions in its own workspace."""
     layout = {"window": window, "workspaces": [], "surfaces": []}
@@ -238,7 +257,7 @@ def build_workspaces(specs, argv_for, window, prefix, per_workspace, direction, 
         cmux_args = [
             "new-workspace",
             "--name",
-            f"{prefix}-{group_index}",
+            workspace_label(group, prefix, group_index),
             "--cwd",
             first_dir,
             "--command",
@@ -517,7 +536,8 @@ def build_workspaces_herdr(specs, argv_for, prefix, per_workspace, direction, fo
     for group_index, group in enumerate(groups, 1):
         first_name, first_dir = group[0]
         create_args = [
-            "workspace", "create", "--cwd", first_dir, "--label", f"{prefix}-{group_index}",
+            "workspace", "create", "--cwd", first_dir, "--label",
+            workspace_label(group, prefix, group_index),
         ]
         create_args.append(
             "--focus" if (focus == "true" and group_index == 1) else "--no-focus"
@@ -750,24 +770,74 @@ def caller_context(backend):
     }
 
 
-def parse_specs(raw, backend, dirs_mode):
-    """Validate every NAME:DIR. Returns (specs, missing dirs) or raises ValueError.
+def git_branch(directory):
+    """The branch checked out in `directory`, or None (not a checkout, detached
+    HEAD, or no git). Read-only."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", directory, "symbolic-ref", "--quiet", "--short", "HEAD"],
+            capture_output=True, text=True, timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    branch = result.stdout.strip()
+    return branch if result.returncode == 0 and branch else None
 
-    Pure: creates nothing. Directories are made later, only once the whole
-    request has passed validation.
+
+def name_from_branch(branch):
+    """A session name that reads like the branch and fits herdr's name rule.
+
+    `feat/T27-Mağaza` becomes `feat-t27-magaza`. herdr caps names at 32
+    characters, so a longer branch is cut at the last `-` that fits. Returns
+    None when nothing usable is left (for example a branch that starts with a
+    digit).
+    """
+    text = unicodedata.normalize("NFKD", branch.translate(ASCII_FOLD))
+    text = text.encode("ascii", "ignore").decode().lower()
+    text = re.sub(r"-{2,}", "-", re.sub(r"[^a-z0-9_-]+", "-", text)).strip("-_")
+    if len(text) > 32:
+        cut = text[:33].rfind("-")
+        text = (text[:cut] if cut >= 16 else text[:32]).rstrip("-_")
+    return text if HERDR_NAME.match(text) else None
+
+
+def parse_specs(raw, backend, dirs_mode):
+    """Validate every NAME:DIR or DIR.
+
+    Returns (specs, missing dirs, {name: branch} for names taken from a branch),
+    or raises ValueError. Pure: creates nothing. Directories are made later,
+    only once the whole request has passed validation.
     """
     specs = []
     missing = set()
+    branches = {}
     for item in raw:
-        if ":" not in item:
-            raise ValueError(f"'{item}' is not NAME:DIR")
-        name, _, directory = item.partition(":")
-        name = " ".join(name.split())
-        directory = directory.strip()
-        if not name:
-            raise ValueError(f"'{item}' has an empty name")
+        if ":" in item:
+            name, _, directory = item.partition(":")
+            name = " ".join(name.split())
+            directory = directory.strip()
+            if not name:
+                raise ValueError(f"'{item}' has an empty name")
+        else:
+            name, directory = None, item.strip()
         if not directory:
             raise ValueError(f"'{item}' has an empty directory")
+        if name is None:
+            # DIR alone: the session is named after the branch checked out there.
+            directory = os.path.abspath(os.path.expanduser(directory))
+            branch = git_branch(directory) if os.path.isdir(directory) else None
+            if branch is None:
+                raise ValueError(
+                    f"'{item}' has no NAME and no checked-out git branch to name the "
+                    "session after. Give NAME:DIR."
+                )
+            name = name_from_branch(branch)
+            if name is None:
+                raise ValueError(
+                    f"branch '{branch}' in '{directory}' gives no valid session name "
+                    "(it must start with a letter). Give NAME:DIR."
+                )
+            branches[name] = branch
         if backend == "herdr" and not HERDR_NAME.match(name):
             raise ValueError(
                 f"'{name}' is not a valid herdr agent name "
@@ -795,7 +865,7 @@ def parse_specs(raw, backend, dirs_mode):
     duplicates = {name for name in names if names.count(name) > 1}
     if duplicates:
         raise ValueError(f"duplicate session names: {', '.join(sorted(duplicates))}")
-    return specs, missing
+    return specs, missing, branches
 
 
 def parse_correlation(pairs):
@@ -965,7 +1035,13 @@ def report_failure(receipt, error, layout, backend):
 
 def build_parser():
     parser = argparse.ArgumentParser(add_help=True)
-    parser.add_argument("specs", nargs="+", metavar="NAME:DIR")
+    parser.add_argument(
+        "specs",
+        nargs="+",
+        metavar="NAME:DIR|DIR",
+        help="NAME:DIR names the session; DIR alone names it after the git branch "
+        "checked out there",
+    )
     parser.add_argument(
         "--backend",
         choices=("auto", "cmux", "herdr"),
@@ -1001,7 +1077,10 @@ def build_parser():
         help="move the UI to the fleet (default: false for split, true otherwise)",
     )
     parser.add_argument("--per-workspace", type=int, default=2, choices=(1, 2))
-    parser.add_argument("--prefix", default="fleet")
+    parser.add_argument(
+        "--prefix",
+        help="title workspaces <prefix>-1, <prefix>-2, ... (default: the session names)",
+    )
     parser.add_argument("--model", help="model for every session, passed in the runtime's own flag")
     parser.add_argument(
         "--claude-arg", action="append", default=[], help="claude runtime only; repeatable"
@@ -1081,7 +1160,7 @@ def validate(args, parser):
         if not os.access(receipt_dir, os.W_OK):
             parser.error(f"--receipt: '{receipt_dir}' is not writable")
     try:
-        specs, missing = parse_specs(args.specs, backend, args.dirs)
+        specs, missing, branches = parse_specs(args.specs, backend, args.dirs)
         correlation = parse_correlation(args.correlate)
     except ValueError as error:
         parser.error(str(error))
@@ -1128,7 +1207,7 @@ def validate(args, parser):
                 parser.error(f"herdr refused the name check for '{name}'.")
             if state != "missing":
                 parser.error(f"could not check whether '{name}' is free in herdr ({state}).")
-    return backend, placement, specs, missing, correlation, caller
+    return backend, placement, specs, missing, correlation, caller, branches
 
 
 def runtime_argv(args):
@@ -1315,37 +1394,137 @@ def report_readiness(receipt, plan, args):
     for entry in receipt.data["sessions"]:
         name, state, identity = entry["name"], entry["state"], entry["identity"]
         if state == "ready" and backend == "herdr":
-            say(f"+ {name:<24} pane {identity.get('pane_id', '?')}")
+            say(f"+ {name:<32} pane {identity.get('pane_id', '?')}")
+            if "title_error" in entry:
+                say(
+                    f"  {name}: Codex kept its default thread name "
+                    f"({entry['title_error']['message']})"
+                )
         elif state == "ready":
-            say(f"+ {name:<24} pid {identity['pid']:<7} uds:{identity['messaging_socket']}")
+            say(f"+ {name:<32} pid {identity['pid']:<7} uds:{identity['messaging_socket']}")
         elif state == "blocked":
             say(
-                f"! {name:<24} blocked at an approval or question prompt "
+                f"! {name:<32} blocked at an approval or question prompt "
                 f"(pane {identity.get('pane_id', '?')}). Read it and ask the user; "
                 "never answer it for them"
             )
         elif state == "denied":
             say(
-                f"x {name:<24} herdr refused the readiness check: "
+                f"x {name:<32} herdr refused the readiness check: "
                 f"{entry['readiness_error']['message']}. Tell the user; do not route around it."
             )
         elif state == "unknown":
             say(
-                f"? {name:<24} readiness unknown: {entry['readiness_error']['message']}. "
+                f"? {name:<32} readiness unknown: {entry['readiness_error']['message']}. "
                 "Reconcile (herdr agent get/read) before another attempt."
             )
         elif "observed_occupant" in identity:
-            say(f"- {name:<24} herdr name now labels a different agent; not this launch's")
+            say(f"- {name:<32} herdr name now labels a different agent; not this launch's")
         elif "registry_candidates" in identity:
             say(
-                f"- {name:<24} {identity['registry_candidates']} new registry records match "
+                f"- {name:<32} {identity['registry_candidates']} new registry records match "
                 "this name and directory; none is bound"
             )
         else:
-            say(f"- {name:<24} did not become ready in {args.timeout}s")
+            say(f"- {name:<32} did not become ready in {args.timeout}s")
+
+
+def mark_unnamed(receipt, entry, code, message, command=None):
+    """Record why a Codex session kept its default thread name."""
+    entry["title_error"] = {
+        "command": command, "code": code, "outcome": "unknown",
+        "exit_code": None, "message": message,
+    }
+    receipt.flush()
+
+
+def name_codex_sessions(receipt):
+    """Give each ready Codex session its fleet name as its thread name.
+
+    Codex has no start-up flag for this; `/rename <name>` is its own command
+    for it. The name is what `codex resume <name>` finds after a reboot. A
+    session that could not be renamed still works; the report says so.
+
+    A herdr name is a reusable alias: a session that went ready early can exit
+    and its name pass to another agent before this runs. So the occupant is
+    checked against the identity recorded at start, the command goes to the
+    verified pane rather than the name, and the answer must come from the
+    same terminal before the title is recorded.
+    """
+    for entry in receipt.data["sessions"]:
+        if entry["state"] != "ready":
+            continue
+        name, expected = entry["name"], entry["identity"]
+        state, agent, error = herdr_readiness(name, "codex", expected)
+        if error is not None:
+            entry["title_error"] = error_record(error)
+            receipt.flush()
+            continue
+        if state != "ready" or not agent.get("pane_id"):
+            mark_unnamed(
+                receipt, entry,
+                "occupant_changed" if state in ("mismatch", "missing") else "not_ready",
+                f"the session was {state} when it was to be renamed; nothing was sent",
+            )
+            continue
+        command = [
+            "agent", "prompt", agent["pane_id"], f"/rename {name}", "--wait",
+            "--timeout", str(CODEX_RENAME_TIMEOUT_MS),
+        ]
+        try:
+            result = herdr(*command, timeout=CODEX_RENAME_TIMEOUT_MS / 1000 + 30)
+        except BackendError as error:
+            entry["title_error"] = error_record(error)
+            receipt.flush()
+            continue
+        answered = result.get("agent") if isinstance(result, dict) else None
+        answered = answered if isinstance(answered, dict) else {}
+        status = answered.get("agent_status")
+        terminal = agent.get("terminal_id")
+        if terminal and answered.get("terminal_id") not in (None, terminal):
+            mark_unnamed(
+                receipt, entry,
+                "occupant_changed",
+                "a different terminal answered /rename; its title is not this session's",
+                command,
+            )
+        elif status in ("idle", "done"):
+            receipt.update_session(name, session_title=name)
+        else:
+            mark_unnamed(
+                receipt, entry,
+                "rename_not_settled",
+                f"Codex was {status or 'in an unknown state'} after /rename",
+                command,
+            )
+
+
+def resume_block(receipt):
+    """How to get each session back after a reboot: by its name, from its cwd."""
+    lines = []
+    for entry in receipt.data["sessions"]:
+        if entry["state"] not in ("ready", "blocked", "not_ready"):
+            continue
+        name, cwd = entry["name"], shlex.quote(entry["cwd"])
+        if entry["runtime"] == "codex":
+            if entry["identity"].get("session_title") != name:
+                lines.append(
+                    f"  cd {cwd} && codex resume   # {name}: Codex did not take the "
+                    "name; pick it from the list"
+                )
+                continue
+            command = f"codex resume {shlex.quote(name)}"
+        else:
+            command = f"claude --resume {shlex.quote(name)}"
+        lines.append(f"  cd {cwd} && {command}")
+    if not lines:
+        return []
+    return ["", "After a reboot, resume a session by its name:", *lines]
 
 
 def launch(args, plan, receipt):
+    for name, branch in plan["branches"].items():
+        say(f"{name}: named after branch {branch}")
     try:
         plan["layout"] = build_layout(args, plan, receipt)
     except BackendError as error:
@@ -1365,6 +1544,8 @@ def launch(args, plan, receipt):
             print(f"note: could not refocus the fleet: {error.message}", file=sys.stderr)
 
     record_readiness(receipt, plan, seen)
+    if args.runtime == "codex":
+        name_codex_sessions(receipt)
     report_readiness(receipt, plan, args)
 
     ready = [entry for entry in receipt.data["sessions"] if entry["state"] == "ready"]
@@ -1376,7 +1557,7 @@ def launch(args, plan, receipt):
             "Check the pane — a stalled permission prompt never registers.",
             file=sys.stderr,
         )
-        for line in cleanup_block(receipt, layout, backend):
+        for line in cleanup_block(receipt, layout, backend) + resume_block(receipt):
             say(line)
         if args.json:
             print(receipt.to_json())
@@ -1386,7 +1567,7 @@ def launch(args, plan, receipt):
     say(f"\n{len(ready)} ready in {plan['elapsed']}s.")
     if backend == "cmux":
         say("Send with a uds: address above, or a freshly resolved ListAgents name/ref.")
-    for line in cleanup_block(receipt, layout, backend):
+    for line in cleanup_block(receipt, layout, backend) + resume_block(receipt):
         say(line)
     if backend == "herdr":
         say(
@@ -1406,12 +1587,13 @@ def main(argv=None):
     args = parser.parse_args(argv)
     OUT = sys.stderr if args.json else sys.stdout
 
-    backend, placement, specs, missing, correlation, caller = validate(args, parser)
+    backend, placement, specs, missing, correlation, caller, branches = validate(args, parser)
     plan = {
         "backend": backend,
         "placement": placement,
         "specs": specs,
         "missing": missing,
+        "branches": branches,
         "caller": caller,
         "focus": args.focus or ("false" if placement == "split" else "true"),
         "argv_for": runtime_argv(args),

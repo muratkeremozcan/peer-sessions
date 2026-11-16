@@ -292,7 +292,7 @@ class SessionStaging(unittest.TestCase):
                 raise PermissionError("read-only")
             return real_replace(source, target)
 
-        validated = ("herdr", "split", specs, set(), {}, {"surface": "w:p1"})
+        validated = ("herdr", "split", specs, set(), {}, {"surface": "w:p1"}, {})
         out, err = io.StringIO(), io.StringIO()
         with mock.patch.object(spawn, "validate", return_value=validated), \
                 mock.patch.object(spawn, "live_records", return_value=[]), \

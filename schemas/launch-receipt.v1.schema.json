@@ -74,6 +74,11 @@
             "type": "object",
             "required": ["command", "code", "outcome", "exit_code", "message"]
           },
+          "title_error": {
+            "type": "object",
+            "description": "Codex only: why the session could not be given its name as a thread name.",
+            "required": ["command", "code", "outcome", "exit_code", "message"]
+          },
           "state": {
             "enum": [
               "pending", "start_requested", "started", "ready", "not_ready",
@@ -95,6 +100,10 @@
               "session_id": { "type": "string" },
               "proc_start": { "type": ["string", "number"] },
               "messaging_socket": { "type": "string" },
+              "session_title": {
+                "type": "string",
+                "description": "Codex only: the thread name set with /rename, which `codex resume <name>` finds. Claude takes the name at start (claude --name)."
+              },
               "registry_candidates": { "type": "integer" },
               "observed_occupant": { "type": "object" }
             }

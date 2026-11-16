@@ -9,7 +9,7 @@ Read this when you choose a `spawn-fleet.py` placement, need a non-default flag,
 - `--direction right|left|up|down` — where each new pane goes (default `right`)
 - `--focus true|false` — move the UI to the fleet (default `false` for `split`, `true` otherwise)
 - `--per-workspace 1|2` — sessions per workspace (default 2)
-- `--prefix <name>` — workspace title prefix (default `fleet`)
+- `--prefix <name>` — title workspaces `<name>-1`, `<name>-2`, … By default each workspace is titled with the session names it holds (`t27-magaza-temizlik`, or `alpha + beta` for two)
 - `--model <model>` — model for every session
 - `--claude-arg <flag>` — repeatable escape hatch, passed to `claude` verbatim
 - `--timeout <seconds>` — how long to wait for live sockets (default 120)
@@ -21,6 +21,10 @@ Read this when you choose a `spawn-fleet.py` placement, need a non-default flag,
 - `--receipt <path>` — write the JSON launch receipt after every allocation
 - `--json` — print the final receipt on stdout; the human report moves to stderr
 - `--correlate KEY=VALUE` — repeatable; your own IDs, echoed verbatim into the receipt
+
+Each spec is `NAME:DIR`, or `DIR` alone to name the session after the git branch checked out there. A `DIR` with no branch (not a checkout, or a detached HEAD) exits 2 with nothing created.
+
+Codex has no start-up flag for a session name, so after a Codex session is ready the script sends it `/rename <name>` through `herdr agent prompt`. If that does not settle, the session still runs: the report and `sessions[].title_error` say so, and `codex resume` run from the session's directory lists it. The rename goes to the pane recorded at start, and only after herdr confirms the same terminal still holds that name: a herdr name can pass to another agent.
 
 Exit status: 0 every session ready; 1 some session not ready or blocked before `--timeout`; 2 invalid request, nothing created; 3 a backend operation failed mid-launch, partial inventory printed and retained.
 
