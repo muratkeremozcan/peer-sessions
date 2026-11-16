@@ -28,6 +28,7 @@ A correlated reply proves a peer answered a request; it does not establish compl
 | Claude `pid`, `session_id`, `proc_start`, `messaging_socket` | Claude registry | `receipt.sessions[].identity` | bound only to a registry record that appeared during this launch with the same name and cwd, for readiness and teardown alike; ambiguous matches record `registry_candidates`, no PID, and the session is not ready |
 | cmux `surface`, `workspace`, `window` | cmux | receipt resources and identity | UUIDs when cmux returns them; a ref is kept beside the UUID it was resolved to |
 | display name | caller | `receipt.sessions[].name` | a label; herdr moves a name with the pane occupant, so readiness also checks terminal or pane identity |
+| session name for resume | transport, from the display name | `claude --name`; Codex `/rename` recorded as `identity.session_title` | the name `claude --resume <name>` and `codex resume <name>` find after a reboot; a Codex rename that did not settle is recorded in `sessions[].title_error` and the session stays usable |
 
 ## Launch receipt
 

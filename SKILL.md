@@ -16,7 +16,13 @@ python3 ~/.claude/skills/peer-sessions/scripts/spawn-fleet.py --placement window
   orbits:/tmp/lab/orbits planets:/tmp/lab/planets sun:/tmp/lab/sun
 ```
 
-Each argument is `NAME:DIR`. The script prints each session's `uds:` address and the exact teardown commands, returns when every session is addressable, and names each session that stalled.
+Each argument is `NAME:DIR`, or `DIR` alone. The script prints each session's `uds:` address, the exact teardown commands and a resume command per session, returns when every session is addressable, and names each session that stalled.
+
+**Name each session after its git branch.** One name then reads the same in the herdr or cmux workspace title, the agent's own session name (`claude --name`, Codex `/rename`) and the resume command the user runs after a reboot (`claude --resume <name>`, `codex resume <name>`). Pass `DIR` alone when it is a checkout or worktree: the script names the session after the branch there (`feat/T27-Mağaza` becomes `feat-t27-magaza`; herdr caps names at 32 characters, so a longer branch is cut at a word). Pick a `NAME` yourself only when the directory has no branch of its own, or when several sessions share one checkout; then name it after the work (`t27-review`). Never use generic names like `worker-1`.
+
+```bash
+python3 ~/.claude/skills/peer-sessions/scripts/spawn-fleet.py ~/repo/.worktrees/t27-magaza-temizlik
+```
 
 `--placement` says where the fleet appears. You choose it. Ask the user only when the choice changes their screen and you cannot tell what they want.
 

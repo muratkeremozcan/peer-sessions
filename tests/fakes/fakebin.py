@@ -20,6 +20,7 @@ Scenario ($FAKE_STATE/scenario.json):
   register_twice: true -> it writes two records with the same name and cwd
   foreign: {"name", "cwd", "pid"} -> the first launch also writes this record
   chmod:  {"match": [...], "path": p, "mode": 320} -> chmod p when a call matches
+  prompt_status: agent_status `agent prompt --wait` settles in (default "done")
   duplicate_on: {"match": [...], "name", "cwd"} -> write one more matching
           registry record (pid $FAKE_PID) when a call matches
 """
@@ -202,6 +203,12 @@ def herdr():
         save("agents.json", agents)
         register_claude([kind, *native], agent["cwd"])
         ok({"agent": agent, "type": "agent_started"})
+    if ARGS[:2] == ["agent", "prompt"]:
+        agent = agents.get(ARGS[2])
+        if agent is None:
+            error("agent_not_found", f"agent target {ARGS[2]} not found")
+        agent = dict(agent, agent_status=scenario.get("prompt_status", "done"))
+        ok({"agent": agent, "type": "agent_prompted"})
     if ARGS[:1] in (["workspace"], ["pane"]) and ARGS[1:2] == ["close"]:
         ok({})
     error("fake_unsupported", f"fake herdr does not model: {ARGS}")
