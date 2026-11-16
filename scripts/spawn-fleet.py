@@ -1429,19 +1429,46 @@ def report_readiness(receipt, plan, args):
             say(f"- {name:<32} did not become ready in {args.timeout}s")
 
 
+def mark_unnamed(receipt, entry, code, message, command=None):
+    """Record why a Codex session kept its default thread name."""
+    entry["title_error"] = {
+        "command": command, "code": code, "outcome": "unknown",
+        "exit_code": None, "message": message,
+    }
+    receipt.flush()
+
+
 def name_codex_sessions(receipt):
     """Give each ready Codex session its fleet name as its thread name.
 
     Codex has no start-up flag for this; `/rename <name>` is its own command
     for it. The name is what `codex resume <name>` finds after a reboot. A
     session that could not be renamed still works; the report says so.
+
+    A herdr name is a reusable alias: a session that went ready early can exit
+    and its name pass to another agent before this runs. So the occupant is
+    checked against the identity recorded at start, the command goes to the
+    verified pane rather than the name, and the answer must come from the
+    same terminal before the title is recorded.
     """
     for entry in receipt.data["sessions"]:
         if entry["state"] != "ready":
             continue
-        name = entry["name"]
+        name, expected = entry["name"], entry["identity"]
+        state, agent, error = herdr_readiness(name, "codex", expected)
+        if error is not None:
+            entry["title_error"] = error_record(error)
+            receipt.flush()
+            continue
+        if state != "ready" or not agent.get("pane_id"):
+            mark_unnamed(
+                receipt, entry,
+                "occupant_changed" if state in ("mismatch", "missing") else "not_ready",
+                f"the session was {state} when it was to be renamed; nothing was sent",
+            )
+            continue
         command = [
-            "agent", "prompt", name, f"/rename {name}", "--wait",
+            "agent", "prompt", agent["pane_id"], f"/rename {name}", "--wait",
             "--timeout", str(CODEX_RENAME_TIMEOUT_MS),
         ]
         try:
@@ -1450,17 +1477,26 @@ def name_codex_sessions(receipt):
             entry["title_error"] = error_record(error)
             receipt.flush()
             continue
-        agent = result.get("agent") if isinstance(result, dict) else None
-        status = agent.get("agent_status") if isinstance(agent, dict) else None
-        if status in ("idle", "done"):
+        answered = result.get("agent") if isinstance(result, dict) else None
+        answered = answered if isinstance(answered, dict) else {}
+        status = answered.get("agent_status")
+        terminal = agent.get("terminal_id")
+        if terminal and answered.get("terminal_id") not in (None, terminal):
+            mark_unnamed(
+                receipt, entry,
+                "occupant_changed",
+                "a different terminal answered /rename; its title is not this session's",
+                command,
+            )
+        elif status in ("idle", "done"):
             receipt.update_session(name, session_title=name)
         else:
-            entry["title_error"] = {
-                "command": command, "code": "rename_not_settled", "outcome": "unknown",
-                "exit_code": None,
-                "message": f"Codex was {status or 'in an unknown state'} after /rename",
-            }
-            receipt.flush()
+            mark_unnamed(
+                receipt, entry,
+                "rename_not_settled",
+                f"Codex was {status or 'in an unknown state'} after /rename",
+                command,
+            )
 
 
 def resume_block(receipt):
@@ -1473,7 +1509,8 @@ def resume_block(receipt):
         if entry["runtime"] == "codex":
             if entry["identity"].get("session_title") != name:
                 lines.append(
-                    f"  # {name}: Codex did not take the name; find it with `codex resume`"
+                    f"  cd {cwd} && codex resume   # {name}: Codex did not take the "
+                    "name; pick it from the list"
                 )
                 continue
             command = f"codex resume {shlex.quote(name)}"

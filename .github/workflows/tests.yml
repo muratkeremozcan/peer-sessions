@@ -27,6 +27,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         python: ["3.9", "3.13"]
+        # 3.9 is the macOS system python3 the skill runs on, so it stays on
+        # macOS. setup-python ships no 3.9 build for Ubuntu 26.04.
+        exclude:
+          - os: ubuntu-latest
+            python: "3.9"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7

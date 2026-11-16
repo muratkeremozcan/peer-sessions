@@ -24,7 +24,7 @@ Read this when you choose a `spawn-fleet.py` placement, need a non-default flag,
 
 Each spec is `NAME:DIR`, or `DIR` alone to name the session after the git branch checked out there. A `DIR` with no branch (not a checkout, or a detached HEAD) exits 2 with nothing created.
 
-Codex has no start-up flag for a session name, so after a Codex session is ready the script sends it `/rename <name>` through `herdr agent prompt`. If that does not settle, the session still runs: the report and `sessions[].title_error` say so, and `codex resume` (the picker) finds it.
+Codex has no start-up flag for a session name, so after a Codex session is ready the script sends it `/rename <name>` through `herdr agent prompt`. If that does not settle, the session still runs: the report and `sessions[].title_error` say so, and `codex resume` run from the session's directory lists it. The rename goes to the pane recorded at start, and only after herdr confirms the same terminal still holds that name: a herdr name can pass to another agent.
 
 Exit status: 0 every session ready; 1 some session not ready or blocked before `--timeout`; 2 invalid request, nothing created; 3 a backend operation failed mid-launch, partial inventory printed and retained.
 

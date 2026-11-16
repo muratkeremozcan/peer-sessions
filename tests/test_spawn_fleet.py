@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import unittest
+from unittest import mock
 
 from helpers import FleetCase, load_script
 from schema_check import errors, load_schema
@@ -956,7 +957,8 @@ class SessionNaming(FleetCase):
                             f"rev:{self.dir('a')}")
         self.assertEqual(result.returncode, 0, result.stderr)
         (prompt,) = self.calls_matching("herdr", "agent", "prompt")
-        self.assertEqual(prompt[3:5], ["rev", "/rename rev"])
+        # Sent to the verified pane, not the reusable name.
+        self.assertEqual(prompt[3:5], ["wF1:p1", "/rename rev"])
         self.assertIn("--wait", prompt)
         session = receipt_from(result)["sessions"][0]
         self.assertEqual(session["identity"]["session_title"], "rev")
@@ -972,7 +974,36 @@ class SessionNaming(FleetCase):
         self.assertNotIn("session_title", session["identity"])
         self.assertEqual(session["title_error"]["code"], "rename_not_settled")
         self.assertIn("Codex kept its default thread name", result.stderr)
-        self.assertIn("rev: Codex did not take the name", result.stderr)
+        self.assertIn(f"cd {self.dir('a')} && codex resume   # rev: Codex did not take",
+                      result.stderr)
+
+    def test_rename_answered_by_another_terminal_is_not_recorded(self):
+        self.install("herdr")
+        self.set_scenario(prompt_answer={"terminal_id": "term_someone_else"})
+        result = self.spawn("--runtime", "codex", "--json", "--timeout", "5",
+                            f"rev:{self.dir('a')}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        session = receipt_from(result)["sessions"][0]
+        self.assertNotIn("session_title", session["identity"])
+        self.assertEqual(session["title_error"]["code"], "occupant_changed")
+
+    def test_name_taken_by_another_agent_before_rename_gets_no_input(self):
+        fleet = load_script("spawn_fleet_rename", "spawn-fleet.py")
+        receipt = mock.Mock()
+        receipt.data = {"sessions": [{
+            "name": "rev", "state": "ready",
+            "identity": {"pane_id": "w1:p1", "terminal_id": "term_rev"},
+        }]}
+        other = {"name": "rev", "pane_id": "w9:p1", "terminal_id": "term_other"}
+        with mock.patch.object(fleet, "herdr_readiness",
+                               return_value=("mismatch", other, None)) as check, \
+                mock.patch.object(fleet, "herdr") as herdr:
+            fleet.name_codex_sessions(receipt)
+        check.assert_called_once_with("rev", "codex", receipt.data["sessions"][0]["identity"])
+        herdr.assert_not_called()
+        session = receipt.data["sessions"][0]
+        self.assertEqual(session["title_error"]["code"], "occupant_changed")
+        self.assertNotIn("session_title", session["identity"])
 
     def test_claude_runtime_sends_no_rename(self):
         self.install("herdr")
