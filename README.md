@@ -7,7 +7,7 @@ Claude Code 2.1.224 added cross-session messaging: one session can send a messag
 ## Install
 
 ```bash
-npx skills@latest add ray-amjad/peer-sessions
+npx skills@latest add muratkeremozcan/peer-sessions
 ```
 
 Or copy this folder into `~/.claude/skills/peer-sessions/`.

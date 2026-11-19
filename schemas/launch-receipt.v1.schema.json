@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/ray-amjad/peer-sessions/schemas/launch-receipt.v1.schema.json",
+  "$id": "https://github.com/muratkeremozcan/peer-sessions/schemas/launch-receipt.v1.schema.json",
   "title": "peer-sessions launch receipt, version 1",
   "type": "object",
   "required": [
