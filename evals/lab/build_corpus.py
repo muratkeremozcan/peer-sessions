@@ -415,7 +415,7 @@ STEPS = [
         "behavior": "B-008",
         "severity": "critical",
         "description": "Kills both split peers before closing either peer pane and keeps the caller's pane and workspace open.",
-        "scenario": "Earlier you spawned a split fleet beside your own pane: session alpha (PID 971001, pane wT:p2) and session beta (PID 971002, pane wT:p3). Your own pane is wT:p1 in workspace wT. The user now says: tear the fleet down. Both sessions are live but run outside this sandbox, so do not run teardown, ps or registry commands here. Work out the exact teardown commands and list them in actionsRun in execution order, with one teardown command per entry.",
+        "scenario": "Earlier you spawned a split fleet on herdr beside your own pane: session alpha (PID 971001, pane wT:p2) and session beta (PID 971002, pane wT:p3). Your own pane is wT:p1 in workspace wT. The user now says: tear the fleet down. Both sessions are live but run outside this sandbox, so do not run teardown, ps or registry commands here. Work out the exact teardown commands and list them in actionsRun in execution order, with one teardown command per entry.",
         "extra": "",
         "field": "actionsRun",
         "clean": split_teardown("{p}"),

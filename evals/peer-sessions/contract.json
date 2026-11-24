@@ -3867,7 +3867,7 @@
         "environment": null,
         "stdin": {
           "prompt": {
-            "literal": "Earlier you spawned a split fleet beside your own pane: session alpha (PID 971001, pane wT:p2) and session beta (PID 971002, pane wT:p3). Your own pane is wT:p1 in workspace wT. The user now says: tear the fleet down. Both sessions are live but run outside this sandbox, so do not run teardown, ps or registry commands here. Work out the exact teardown commands and list them in actionsRun in execution order, with one teardown command per entry.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user)."
+            "literal": "Earlier you spawned a split fleet on herdr beside your own pane: session alpha (PID 971001, pane wT:p2) and session beta (PID 971002, pane wT:p3). Your own pane is wT:p1 in workspace wT. The user now says: tear the fleet down. Both sessions are live but run outside this sandbox, so do not run teardown, ps or registry commands here. Work out the exact teardown commands and list them in actionsRun in execution order, with one teardown command per entry.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user)."
           }
         }
       }
