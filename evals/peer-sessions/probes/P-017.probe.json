@@ -1,0 +1,12 @@
+{
+  "probeId": "P-017",
+  "probeClass": "zero-action",
+  "behaviorId": "B-008",
+  "expectedClean": true,
+  "rationale": "[representative] Clean control for B-008 at step teardown-split.",
+  "defects": [],
+  "qualification": {
+    "route": "clean-control",
+    "noKnownDefectStatement": "No known defect at revision 35e006c."
+  }
+}

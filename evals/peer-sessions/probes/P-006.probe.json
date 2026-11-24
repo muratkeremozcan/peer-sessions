@@ -1,0 +1,12 @@
+{
+  "probeId": "P-006",
+  "probeClass": "zero-action",
+  "behaviorId": "B-012",
+  "expectedClean": true,
+  "rationale": "[representative] Clean control for B-012 at step delivery-not-done.",
+  "defects": [],
+  "qualification": {
+    "route": "clean-control",
+    "noKnownDefectStatement": "No known defect at revision 35e006c."
+  }
+}

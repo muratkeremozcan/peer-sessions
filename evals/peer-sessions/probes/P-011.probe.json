@@ -1,0 +1,130 @@
+{
+  "probeId": "P-011",
+  "probeClass": "defect",
+  "behaviorId": "B-002",
+  "expectedClean": false,
+  "rationale": "[negative] M-009: The agent picks a placement other than split for one short watched peer.",
+  "defects": [
+    {
+      "defectId": "D-009",
+      "behaviorId": "B-002",
+      "summary": "The agent picks a placement other than split for one short watched peer.",
+      "severity": "material",
+      "source": "controlled-mutation",
+      "manifestationWitness": {
+        "legId": "manifest-spawn-one-watch",
+        "interfaceId": "peer-sessions-runner",
+        "operationId": "run-skill",
+        "inputs": {
+          "argument": {},
+          "option": {
+            "agent": "claude",
+            "skill-root": "peer-sessions",
+            "timeout-ms": "540000",
+            "model": "claude-opus-5-5",
+            "capability": "command-execution",
+            "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/spawn-one-watch/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/spawn-one-watch/projects\",\"HERDR_ENV\":\"1\",\"HERDR_PANE_ID\":\"wT:p1\",\"HERDR_WORKSPACE_ID\":\"wT\"}}"
+          },
+          "environment": {},
+          "stdin": {
+            "kind": "text",
+            "value": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-one-watch`.\nThe user says: start two Claude peers, one in `lab/x` and one in `lab/y`, to each skim one README for two minutes. Do it now with the skill's spawn script; do not send briefs yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"placement\" (the --placement value you used: split, workspace or window)."
+          }
+        },
+        "relation": {
+          "op": "all",
+          "operands": [
+            {
+              "op": "existence",
+              "operands": [
+                {
+                  "pointer": "/interactions/manifest-spawn-one-watch/stdout/placement"
+                }
+              ]
+            },
+            {
+              "op": "not",
+              "operands": [
+                {
+                  "op": "equality",
+                  "operands": [
+                    {
+                      "pointer": "/interactions/manifest-spawn-one-watch/stdout/placement"
+                    },
+                    {
+                      "literal": "split"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "defectSignature": {
+    "interfaceKind": "cli",
+    "invocation": {
+      "executable": "tea-skill-runner",
+      "subcommandPath": []
+    },
+    "observableChannel": "stdout",
+    "condition": {
+      "selector": {
+        "inputBinding": {
+          "path": null,
+          "query": null,
+          "header": null,
+          "body": null,
+          "argument": null,
+          "option": {
+            "agent": {
+              "matcher": "any"
+            }
+          },
+          "environment": null,
+          "stdin": {
+            "prompt": {
+              "literal": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-one-watch`.\nThe user says: start two Claude peers, one in `lab/x` and one in `lab/y`, to each skim one README for two minutes. Do it now with the skill's spawn script; do not send briefs yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"placement\" (the --placement value you used: split, workspace or window)."
+            }
+          },
+          "arguments": null
+        }
+      },
+      "predicate": {
+        "op": "all",
+        "operands": [
+          {
+            "op": "existence",
+            "operands": [
+              {
+                "pointer": "/interactions/observed/stdout/placement"
+              }
+            ]
+          },
+          {
+            "op": "not",
+            "operands": [
+              {
+                "op": "equality",
+                "operands": [
+                  {
+                    "pointer": "/interactions/observed/stdout/placement"
+                  },
+                  {
+                    "literal": "split"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "qualification": {
+    "route": "controlled-mutation",
+    "mutation": "M-009"
+  }
+}

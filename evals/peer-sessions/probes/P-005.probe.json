@@ -1,0 +1,12 @@
+{
+  "probeId": "P-005",
+  "probeClass": "zero-action",
+  "behaviorId": "B-011",
+  "expectedClean": true,
+  "rationale": "[representative] Clean control for B-011 at step codex-caller.",
+  "defects": [],
+  "qualification": {
+    "route": "clean-control",
+    "noKnownDefectStatement": "No known defect at revision 35e006c."
+  }
+}

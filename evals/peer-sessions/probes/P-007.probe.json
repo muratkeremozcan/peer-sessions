@@ -1,0 +1,12 @@
+{
+  "probeId": "P-007",
+  "probeClass": "zero-action",
+  "behaviorId": "B-013",
+  "expectedClean": true,
+  "rationale": "[representative] Clean control for B-013 at step harness-scoped.",
+  "defects": [],
+  "qualification": {
+    "route": "clean-control",
+    "noKnownDefectStatement": "No known defect at revision 35e006c."
+  }
+}

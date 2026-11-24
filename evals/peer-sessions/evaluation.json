@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 2,
+  "evaluationId": "peer-sessions",
+  "targetKind": "skill",
+  "interface": "cli",
+  "registry": [
+    {
+      "interfaceId": "peer-sessions-runner",
+      "executable": "tea-skill-runner",
+      "target": "tea-skill-runner",
+      "subcommandPaths": [
+        []
+      ],
+      "artifacts": {},
+      "environmentKeys": [
+        "HOME",
+        "USER"
+      ],
+      "maxElapsedMs": 900000,
+      "infrastructureExitCodes": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "egress": [
+        {
+          "host": "api.anthropic.com",
+          "port": 443,
+          "addresses": [
+            "160.79.104.10",
+            "2607:6bc0::10"
+          ]
+        }
+      ],
+      "systemPaths": [
+        "/Users/murat/opensource/mine/my-skills/peer-sessions/evals/node_modules/bmad-method-test-architecture-enterprise",
+        "/Users/murat/opensource/mine/my-skills/peer-sessions/evals/node_modules/commander",
+        "/Users/murat/opensource/mine/my-skills/peer-sessions/evals/node_modules/.bin"
+      ],
+      "login": "claude"
+    }
+  ],
+  "launch": {
+    "root": "../root",
+    "skillRoot": "peer-sessions"
+  },
+  "workspace": {
+    "kind": "copy",
+    "provision": []
+  },
+  "arms": [
+    "clean",
+    "mutated"
+  ],
+  "trials": 3,
+  "tiers": [
+    "pr",
+    "release"
+  ],
+  "strengthFloor": {
+    "defect": 1
+  },
+  "requirements": {
+    "path": "requirements.md",
+    "digest": "sha256:91a6a7a16ffd74597eae4aec57bc5bb87184d17ebc172d534a549707db0b7eb1"
+  },
+  "operationPhases": {
+    "peer-sessions-runner": {
+      "run-skill": "outcome"
+    }
+  },
+  "confinement": false
+}

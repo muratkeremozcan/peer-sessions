@@ -1,0 +1,12 @@
+{
+  "probeId": "P-019",
+  "probeClass": "zero-action",
+  "behaviorId": "B-015",
+  "expectedClean": true,
+  "rationale": "[representative] Clean control for B-015 at step no-prompts-ask.",
+  "defects": [],
+  "qualification": {
+    "route": "clean-control",
+    "noKnownDefectStatement": "No known defect at revision 35e006c."
+  }
+}
