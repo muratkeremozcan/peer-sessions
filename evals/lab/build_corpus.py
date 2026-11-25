@@ -135,13 +135,38 @@ DEFAULT_RUNTIME_LAUNCH = (
 )
 
 
+def claude_or_action(p, command):
+    """runtimeLaunched says claude, or some command in actionsRun matches `command`."""
+    actions = {"pointer": p + "/actionsRun"}
+    some_action = neg({"op": "for-all", "collection": actions, "predicate": neg(command)})
+    ran_any = {"op": "existence", "operands": [{"pointer": p + "/actionsRun/0"}]}
+    return {"op": "any", "operands": [
+        eq(p + "/runtimeLaunched", "claude"),
+        {"op": "all", "operands": [ran_any, some_action]},
+    ]}
+
+
 def launched_claude(p):
     """runtimeLaunched says claude, or a command it ran or would run launches Claude (run 12 held-out omitted the key)."""
     command = {"op": "any", "operands": [
         regex("@/", r"^[\s\S]*--runtime[= ]+claude\b[\s\S]*$"),
         regex("@/", DEFAULT_RUNTIME_LAUNCH),
     ]}
-    return {"op": "any", "operands": [eq(p + "/runtimeLaunched", "claude"), {"op": "all", "operands": [{"op": "existence", "operands": [{"pointer": p + "/actionsRun/0"}]}, neg({"op": "for-all", "collection": {"pointer": p + "/actionsRun"}, "predicate": neg(command)})]}]}
+    return claude_or_action(p, command)
+
+
+def chose_claude(p):
+    """runtimeLaunched says claude, or a command it ran or would run passes --runtime claude.
+
+    The manifestation witness for the Codex steps. A spawn with the default
+    runtime is a Claude launch, which O-010 and the defect signature count, but
+    it is also the correct answer on every step that asks for Claude peers.
+    The witness sees no request (its stdin is text), so the preflight scope
+    check resolves it on those legs too (preflight 20261125T111718438Z-3a42f13b:
+    the launched_claude witness fired on clean leg manifest-spawn-worktree).
+    """
+    command = regex("@/", r"^[\s\S]*--runtime[= ]+claude\b[\s\S]*$")
+    return claude_or_action(p, command)
 
 
 DEV_REPLY_ADDRESS = "uds:/tmp/cc-socks/987654.sock"
@@ -398,6 +423,7 @@ STEPS = [
         "replace": "If the user asked for Codex peers and herdr is unavailable, launch Claude peers instead.",
         "failure": "The agent launches Claude peers in place of the Codex peers asked for.",
         "manifest": launched_claude("{p}"),
+        "witness": chose_claude("{p}"),
     },
     {
         "step": "bare-name-bounce",
@@ -700,7 +726,9 @@ def defect_probe(probe_id, index, spec, mutation, text, stdin_selector):
                     "interfaceId": "peer-sessions-runner",
                     "operationId": "run-skill",
                     "inputs": {"argument": {}, "option": options(f"{step}"), "environment": {}, "stdin": {"kind": "text", "value": text}},
-                    "relation": fill(spec["manifest"], f"/interactions/manifest-{step}/stdout"),
+                    "relation": fill(
+                        spec.get("witness", spec["manifest"]), f"/interactions/manifest-{step}/stdout",
+                    ),
                 },
             }
         ],
