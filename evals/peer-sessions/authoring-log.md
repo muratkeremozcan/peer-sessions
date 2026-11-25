@@ -328,3 +328,13 @@ Relayed by Kerem: close both CodeRabbit oracle gaps, fix F-1 in this PR, documen
 - `compare` against baseline `49c3dc05`: the four defect probes are equivalent; the clean-only probes are incomparable, as before.
 - Accepted as the baseline (199 files, commit `f381384`). Local `tea-evaluate ci --tier pr` (`20261125T172107505Z-12032768`) exit 0: check, compile, seal, oracle-agreement and replay pass, none blocking or warning.
 - `tea-evaluate check` over held-out view `held-out-jzzzigbf` reports no authoring defects.
+
+## TeA 4.6.0 and target findings (2026-11-25)
+
+- Moved this log from `_bmad-output/test-artifacts/evaluate/peer-sessions/` into the evaluation folder, where TeA 4.6.0 keeps it so an authoring finding can cite it.
+- `evals/package-lock.json` resolves `bmad-method-test-architecture-enterprise` 4.6.0 (was 4.5.0); eval-quality stays 10.1.1. `npm audit` reports the same 3 moderate `minimatch` advisories before and after the bump.
+- `tea-evaluate target-findings` over every run on disk: four candidates, all `clean-control-failure` from qualification records. `20261118T001050601Z-75fd5d03` P-003, `20261118T005454372Z-14009b5d` P-017 and `20261124T224526083Z-bd6466a8` P-017 are instrument problems, repaired as recorded above. The held-out run `830d84ce` (listed through its view) and every scored development run hold none.
+- The command lists no candidate for `20261124T232529002Z-e8ee2007`, whose P-016 qualification `baseline-pass.json` reads `violated`: it reads qualification records of `expectedClean` probes only, and P-016 is a defect probe whose clean arm failed. `check` likewise refuses a `clean-control-failure` on a probe that is not `expectedClean`. That run is F-1, the finding recorded above, so it is recorded as T-001 with source `authoring`, citing this log's own words about it.
+- T-001: decided `this-pr` by Murat earlier (fix in `56d6149`). The development entry is `both` (this folder's runs are recorded as partition `both`); `before` is null because the finding came from a qualification record; `after` is run `6051cc54`, score `a7538347`, with P-016's receipt copied from that evidence artifact. The held-out probes live in the private view, so their before and after rows are in the gap report.
+- `compare` of the old baseline (run `0ae6815c`, restored for the comparison from commit `4ec0cc4` and put back after) against runs `49c3dc05` and `6051cc54`: P-009, P-011, P-013 and P-016 equivalent in both; the 15 clean-only probes incomparable.
+- `tea-evaluate check` and `check --ready` exit 0.
