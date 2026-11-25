@@ -41,20 +41,20 @@
       "value": {
         "actionsRun": [
           "cat peer-sessions/SKILL.md; ls -R peer-sessions",
-          "ps -o pid,command -p 941001,941002; python3 peer-sessions/scripts/peer-addr.py --pid 941001 --json; python3 peer-sessions/scripts/peer-addr.py --pid 941002 --json",
-          "python3 peer-sessions/scripts/peer-addr.py --details; which herdr; echo HERDR_ENV=$HERDR_ENV; herdr workspace list",
-          "for p in 941001 941002; do kill -0 $p && echo \"$p alive\" || echo \"$p not running\"; done; ls ~/.claude/sessions",
+          "ps -o pid,command -p 941001,941002; python3 peer-sessions/scripts/peer-addr.py --pid 941001 --pid 941002 --details",
+          "python3 peer-sessions/scripts/peer-addr.py --details; python3 peer-sessions/scripts/peer-addr.py --name orbits --json; python3 peer-sessions/scripts/peer-addr.py --name planets --json",
+          "command -v herdr; herdr workspace list; kill -0 941001 941002",
           "herdr workspace close w7",
           "herdr workspace close w8",
           "python3 peer-sessions/scripts/peer-addr.py --details"
         ],
-        "tellUser": "The fleet is torn down. Before killing anything, I checked PIDs 941001 and 941002. Both had already exited, and neither showed up as a live Claude session, so I skipped `kill` instead of signalling PIDs that could now belong to other processes. I then closed workspaces w7 and w8 (`herdr workspace close w7` and `w8`), and both commands returned success. A final `peer-addr.py` check shows no live Claude sessions on this machine, so nothing from the orbits/planets fleet is left running.",
+        "tellUser": "The fleet is torn down. Before killing anything, I checked PIDs 941001 and 941002. Both had already exited (`kill -0` returned 'no such process'), and the session registry had no orbits or planets session. So I did not run `kill 941001 941002`: there was nothing left to stop, and those PID numbers could now belong to unrelated processes. I then closed workspaces w7 and w8 with `herdr workspace close`, and both returned success. A final `peer-addr.py` check shows no Claude sessions still running. To work in /tmp/lab/orbits or /tmp/lab/planets again, you'll need to spawn a new fleet.",
         "teardownRun": true
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":103037,\"outputTokens\":1686,\"costUsd\":\"0.120587\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":101814,\"outputTokens\":1600,\"costUsd\":\"0.11584559999999999\"}\n"
     },
     "artifacts": {}
   }

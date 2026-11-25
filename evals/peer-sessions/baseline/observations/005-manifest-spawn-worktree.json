@@ -40,11 +40,12 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init",
-          "cat peer-sessions/SKILL.md; ls -R peer-sessions",
-          "python3 peer-sessions/scripts/spawn-fleet.py --placement workspace worker-1:lab-repo"
+          "Bash: cat peer-sessions/SKILL.md; ls peer-sessions peer-sessions/*",
+          "Bash: rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init",
+          "Bash: sed -n 1,80p peer-sessions/references/placement.md",
+          "Bash: python3 peer-sessions/scripts/spawn-fleet.py --placement workspace worker-1:lab-repo"
         ],
-        "tellUser": "Peer session `worker-1` is up in `lab-repo/`, in a new herdr workspace (wF1, pane wF1:p1). It's addressable now. I haven't sent it a brief yet. I'll send one when you give me the research task. Because this is herdr, you can also drive it with `herdr agent prompt worker-1 <text>` and read replies with `herdr agent wait/read worker-1`.\n\nThe session stays running, and using its context, until you ask me to stop it. When you want it gone, this is the teardown the spawn printed:\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\nThat block only closes the workspace. Closing the UI doesn't stop the `claude` process, so I'll stop the process first and then close the workspace.\n\nTo resume after a reboot:\n  cd /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-008-5f1cc810-d129-458f-aefc-38b2aded0e75/target/lab-repo && claude --resume worker-1",
+        "tellUser": "Peer session `worker-1` is running in `lab-repo/`. It's in its own herdr workspace (wF1, pane wF1:p1), so your current screen didn't change. It was ready in 0s and hasn't been sent a brief yet.\n\nThe session stays up until you tell me to stop it. While it's idle it uses no tokens, but it does take up a workspace. Once you send it a brief, it does that work in its own context.\n\nThis harness may not let SendMessage reach it by name. If that happens, drive it with `herdr agent prompt worker-1 <text>`, then `herdr agent wait worker-1` and `herdr agent read worker-1`.\n\nTo shut it down, run:\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\nThe teardown the script printed has no `kill` line, and closing the workspace may leave the claude process running. Check with peer-addr.py and kill any leftover worker-1 PID.\n\nTo resume it after a reboot: cd lab-repo && claude --resume worker-1",
         "sessionNames": [
           "worker-1"
         ]
@@ -52,7 +53,7 @@
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":39589,\"outputTokens\":1219,\"costUsd\":\"0.08383180000000001\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":57653,\"outputTokens\":1178,\"costUsd\":\"0.1009842\"}\n"
     },
     "artifacts": {}
   }

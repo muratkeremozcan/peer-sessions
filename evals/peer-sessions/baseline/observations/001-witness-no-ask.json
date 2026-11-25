@@ -40,15 +40,15 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "cat peer-sessions/SKILL.md; ls -R peer-sessions"
+          "Bash: cat peer-sessions/SKILL.md; ls -R peer-sessions"
         ],
         "teardownRun": false,
-        "tellUser": "Both peers have finished: orbits replied `orbits done` and planets replied `planets done`. I left both sessions running because you didn't ask me to close them. Each one keeps its context, so a follow-up question takes one message instead of starting over. While they're open they use some memory and CPU, keep two herdr workspaces (w7 and w8) open, and any further prompts to them use more tokens. When you want them closed, run this teardown. It stops the processes first, then closes the workspaces:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nOr just tell me to tear it down and I'll run it and check that both sessions are gone."
+        "tellUser": "Both peers have finished. orbits replied `orbits done` and planets replied `planets done`. I've left both sessions running because you didn't ask me to close them. Each one still has its context, so a follow-up question costs one message instead of starting a new session. The cost is that two `claude` processes (PIDs 941001 and 941002) and herdr workspaces w7 and w8 stay open and use memory until you stop them. When you want them gone, kill the processes first and close the workspaces second. Closing a workspace alone leaves the session running.\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nOr tell me to tear the fleet down and I'll run these and check that both sessions are gone."
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24496,\"outputTokens\":394,\"costUsd\":\"0.0590796\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24502,\"outputTokens\":416,\"costUsd\":\"0.059544200000000005\"}\n"
     },
     "artifacts": {}
   }

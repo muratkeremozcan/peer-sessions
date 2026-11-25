@@ -40,20 +40,21 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "Read(/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-991d5e03-a1e4-4da6-a409-1864871cf85e/target/peer-sessions/SKILL.md)",
-          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-991d5e03-a1e4-4da6-a409-1864871cf85e/target/peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-correctness:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-991d5e03-a1e4-4da6-a409-1864871cf85e/target diff-review-risk:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-991d5e03-a1e4-4da6-a409-1864871cf85e/target",
-          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-991d5e03-a1e4-4da6-a409-1864871cf85e/target/peer-sessions/scripts/peer-addr.py --me",
-          "SendMessage(to: \"diff-review-correctness\", message: \"<review brief: review the diff for correctness and bugs; read-only, do not modify files; reply format 'diff-review-correctness done: <findings>'; ends with my uds: address>\", summary: \"Review diff for correctness\")",
-          "SendMessage(to: \"diff-review-risk\", message: \"<review brief: review the diff for risk, edge cases and missing tests; read-only, do not modify files; reply format 'diff-review-risk done: <findings>'; ends with my uds: address>\", summary: \"Review diff for risks\")",
-          "Re-send both SendMessage calls with the [ref] from the expected first bounce, then end the turn and wait for the replies"
+          "Read peer-sessions/SKILL.md",
+          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-66d76a99-a502-4290-8441-14e1229ac984/target/peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-a:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-66d76a99-a502-4290-8441-14e1229ac984/target diff-review-b:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-66d76a99-a502-4290-8441-14e1229ac984/target",
+          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-66d76a99-a502-4290-8441-14e1229ac984/target/peer-sessions/scripts/peer-addr.py --me",
+          "SendMessage(to: \"diff-review-a\", message: \"<review brief: review the diff, read-only, do not edit files; reply format 'diff-review-a done: <findings>'; ends with my uds: address>\", summary: \"Review the diff, report findings\")",
+          "SendMessage(to: \"diff-review-b\", message: \"<same review brief, reply format 'diff-review-b done: <findings>'; ends with my uds: address>\", summary: \"Review the diff, report findings\")",
+          "SendMessage(to: \"diff-review-a [<ref from bounce>]\", message: \"<same brief>\", summary: \"Review the diff, report findings\")",
+          "SendMessage(to: \"diff-review-b [<ref from bounce>]\", message: \"<same brief>\", summary: \"Review the diff, report findings\")"
         ],
-        "tellUser": "I can't start Codex peers on this machine. Codex sessions need herdr, and herdr isn't installed here. Only cmux is available, so I'm starting two Claude Code peers to review the diff instead. They open as split panes beside mine: diff-review-correctness looks for bugs and diff-review-risk looks for risky edge cases and missing tests. Both are read-only and will message me their findings. I'll combine the two reviews when they reply. The sessions stay up afterwards so you can ask follow-up questions, and I'll give you the commands to close them. If you need Codex specifically, install herdr and run me from a herdr pane.",
+        "tellUser": "I can't start Codex peers on this machine. Codex sessions need herdr, and only cmux is installed. I'm starting two Claude Code reviewers instead, diff-review-a and diff-review-b, in split panes next to this one. Each gets a read-only brief to review the diff and send its findings back to me. I'll end my turn once the briefs are sent, and their replies will come in as new messages. When they're done the sessions stay open so you can ask follow-up questions, and I'll give you the teardown commands. If you need Codex specifically, install herdr and run me from inside a herdr pane.",
         "runtimeLaunched": "claude"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24330,\"outputTokens\":1718,\"costUsd\":\"0.08572139999999999\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24319,\"outputTokens\":1610,\"costUsd\":\"0.0834968\"}\n"
     },
     "artifacts": {}
   }

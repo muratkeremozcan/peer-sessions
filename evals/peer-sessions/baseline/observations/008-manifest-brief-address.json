@@ -41,15 +41,15 @@
       "value": {
         "actionsRun": [
           "Bash: cat peer-sessions/SKILL.md; ls peer-sessions",
-          "Bash: ls -d \"$PWD/peer-sessions/docs/coordination-contract-v1.md\"; ls docs 2>&1 | head"
+          "Bash: ls -la peer-sessions/docs/ docs/ 2>&1; pwd"
         ],
-        "tellUser": "I wrote the brief for `orbits` and did not send it. It gives the full path to the contract file (`peer-sessions/docs/coordination-contract-v1.md`), because the peer works in a different directory. It also limits the peer to reading only and asks for a reply that starts with a fixed header. I left out my `uds:/tmp/cc-socks/987654.sock` address on purpose: a peer automatically replies to whoever messaged it, so the brief doesn't need a return address. I also skipped a correlation footer, since this is a single request.",
-        "brief": "Please read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-cef5b4f4-a151-409e-8369-e0d8a17d664b/target/peer-sessions/docs/coordination-contract-v1.md and summarise it.\n\nCover: what the contract is for, the receipt/inventory format and its key fields, the status and failure values (for example ready, blocked, denied, unknown, failed) and what each means, the exit-code meanings, how correlation IDs are carried, and any versioning or compatibility rules. Keep it to about 10-15 bullets and quote the field names exactly as they appear in the file.\n\nScope: only read and summarise. Do not edit, create or delete any files, do not run spawn or teardown scripts, and do not message other sessions.\n\nWhen you're done, reply to me with your summary. Start your reply with this exact line:\norbits done: coordination-contract-v1 summary\nthen the bullets. If you can't read the file, reply with \"orbits blocked: <reason>\" instead."
+        "tellUser": "The brief for `orbits` is written but not sent. It doesn't include your `uds:/tmp/cc-socks/987654.sock` address because the skill says a peer replies to whoever messaged it, so a brief needs no return address. The doc path points to the copy in the skill's own directory, `peer-sessions/docs/coordination-contract-v1.md`, because there is no `docs/` in the working directory. I wrote it as an absolute path since `orbits` runs in a different directory. The brief limits the peer to reading only and asks for a reply that starts with `orbits done:`. If you send it later by bare name, the first send will bounce; re-send it with the `[ref]` from the error.",
+        "brief": "Please read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-707c891e-8baf-4657-ad64-0168151dd975/target/peer-sessions/docs/coordination-contract-v1.md and summarise it.\n\nCover: what the contract is for, the receipt/JSON format and its key fields, the status values and exit codes and what each means (including denied / unknown / failed / blocked), how correlation IDs are echoed, and any versioning or compatibility rules. Keep it to about 10-15 bullets and quote field names exactly.\n\nScope: read only. Do not edit, create, or run anything, and do not touch any other files or repos.\n\nWhen done, reply to me with your summary in this format:\norbits done:\n- <bullet>\n- <bullet>\n..."
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":38373,\"outputTokens\":1099,\"costUsd\":\"0.0768518\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":38482,\"outputTokens\":1078,\"costUsd\":\"0.0773662\"}\n"
     },
     "artifacts": {}
   }
