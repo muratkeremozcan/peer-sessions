@@ -321,3 +321,10 @@ Relayed by Kerem: close both CodeRabbit oracle gaps, fix F-1 in this PR, documen
 - The development baseline's recorded scores carry the old O-013, so the development partition is rerun on this contract and the baseline accepted again.
 - Held-out: the held-out source is unchanged (`sha256:dbd84be9…`). The held-out view carries the shared `contract.json`, so the `heldOutDigest` of a view built now is `sha256:b222b9abc58a6046a46b8e5f04bbae0179594825952040b19f91329e40aaadbe` (view `held-out-t8244em2`). O-013 belongs to the development step `teardown-split` and to no held-out probe, so the held-out run `830d84ce` on view `held-out-jzzzigbf` stands as the held-out evidence for target `56d6149`.
 - Disclosure: a scan for tool-call forms in `teardown-split` replies also globbed the archived held-out run `20261118T035321024Z-694e9773` and printed one `actionsRun` entry (`Read .../SKILL.md`) of its `teardown-split` observation in a P-022 record. That is a development step inside a retired held-out probe's record. No held-out case, oracle or probe was changed after it.
+
+### Development rerun on the repaired O-013
+
+- Run `20261125T160210255Z-6051cc54` (exit 0) on commit `2239ae5`, `dirty: false`, score `20261125T172027108Z-a7538347`: every probe PASS. 15 of 15 clean controls held in 3 of 3 trials; P-009, P-011, P-013 and P-016 were caught in 3 of 3. Coverage gaps are the two waived ones.
+- `compare` against baseline `49c3dc05`: the four defect probes are equivalent; the clean-only probes are incomparable, as before.
+- Accepted as the baseline (199 files, commit `f381384`). Local `tea-evaluate ci --tier pr` (`20261125T172107505Z-12032768`) exit 0: check, compile, seal, oracle-agreement and replay pass, none blocking or warning.
+- `tea-evaluate check` over held-out view `held-out-jzzzigbf` reports no authoring defects.

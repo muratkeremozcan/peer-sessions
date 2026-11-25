@@ -2,7 +2,7 @@
 
 ## Target and scope
 
-- Adopter-owned target: the `peer-sessions` skill at the repository root (`SKILL.md`, `references/`, `scripts/`), revision `35e006c`.
+- Adopter-owned target: the `peer-sessions` skill at the repository root (`SKILL.md`, `references/`, `scripts/`), revision `56d6149`.
 - What it does: instructs an agent to spawn Claude Code or Codex sessions in cmux or herdr, address them with `SendMessage`, correlate replies, handle blocked or denied launches, relay from Codex, and keep teardown opt-in.
 - Ambiguity to resolve with the adopter: the Python scripts already have deterministic unit tests against fake multiplexers. The evaluation targets the agent's decisions while following `SKILL.md` (command chosen, placement, addressing, stop/teardown/escalation calls), with the scripts as fixed tools.
 - Evaluation ID: `peer-sessions`.
@@ -86,15 +86,15 @@ Worker research: test inventory and history drafted by two Haiku workers, verifi
 - Plan: `evals/peer-sessions/ci/evaluation-ci-plan.json`, `tea-evaluate check` clean. `pr`: check, compile, seal, oracle-agreement, replay. `release`: preflight-live, twin-run, strength-comparison. The held-out partition is not in the plan: the repository folder declares no held-out partition, and held-out runs go through the private view on the author's machine. Deleted as inapplicable: api-conformance (no HTTP target), gameability (no gameability probe), judge-calibration (no rubric). No scheduled entries. No `gates` (no publish or deploy job).
 - Deviations from AD-10 defaults: none. Live checks sit on `release`, their default for a target that needs a secret.
 - `evaluation.json`: `tiers` = `["pr", "release"]`; the registry entry declares `"login": "claude"`, so a CI run hands the target `CLAUDE_CODE_OAUTH_TOKEN` and a local run keeps the Keychain login.
-- Hand-off: the `pr` tier is rendered as the `evaluation` job (Node 24, `npm ci --prefix evals --ignore-scripts`, `tea-evaluate ci --tier pr`). The `release` tier is not rendered: the repository has no release event and no model secret. Open item.
+- Hand-off: the `pr` tier is rendered as the `evaluation` job (Node 24, `npm ci --prefix evals --ignore-scripts`, `tea-evaluate ci --tier pr`). The `release` tier is not rendered: the repository has no release event and no model secret. Open item. The README states what it needs: a `CLAUDE_CODE_OAUTH_TOKEN` repository secret and a release event.
 
 Pull request checklist (`references/ci.md`):
 
 1. Inputs committed (`contract.json`, `evaluation.json`, `requirements.md`, `probes/`, `mutations/`, `policy/`, `corpus-index.json`, `ci/evaluation-ci-plan.json`); `tea-evaluate check` exits 0. Holds.
-2. Development run over that commit: `20261124T235450135Z-0ae6815c` on `9e121b3`, `dirty: false`. Holds.
-3. Scored by `20261125T011351760Z-cebb6d6e`; no probe reads `unreached`, `abstained` or `oracle-error`. Holds.
-4. Baseline accepted from that run and committed in `4ec0cc4`. Holds.
-5. Held-out frozen and independent: read only through `gap-view.json`; `check` over the view prints no `held-out-drift` warning; run `20261125T022308310Z-c1e0626a` records the frozen `heldOutDigest`. Holds, with the P-023 witness repair disclosed in the authoring log and the gap report.
-6. `tea-evaluate ci --tier pr` exits 0 locally (`20261125T035133274Z-458049d5`). Holds.
+2. Development run over that commit: `20261125T160210255Z-6051cc54` on `2239ae5`, `dirty: false`. Holds.
+3. Scored by `20261125T172027108Z-a7538347`; no probe reads `unreached`, `abstained` or `oracle-error`. Holds.
+4. Baseline accepted from that run and committed in `f381384`. Holds.
+5. Held-out frozen and independent: read only through `gap-view.json`; `check` over the view prints no `held-out-drift` warning; run `20261125T145324681Z-830d84ce` records the frozen `heldOutDigest` (`sha256:bfab57ce…`). Holds, with the retired P-022, the P-024 witness repair before the run and the later O-013 change disclosed in the authoring log and the gap report.
+6. `tea-evaluate ci --tier pr` exits 0 locally (`20261125T172107505Z-12032768`). Holds.
 7. The repository's pull request checks pass on the branch: recorded on the pull request.
 8. `gap-report.md` opens with a filled `## Evaluation brief`. Holds.
