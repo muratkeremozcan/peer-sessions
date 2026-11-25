@@ -1,0 +1,11 @@
+# Generated files (see .gitattributes) stay out of review.
+reviews:
+  path_filters:
+    - "!evals/peer-sessions/baseline/**"
+    - "!evals/peer-sessions/probes/**"
+    - "!evals/peer-sessions/mutations/**"
+    - "!evals/peer-sessions/contract.json"
+    - "!evals/peer-sessions/compiled-contract.json"
+    - "!evals/peer-sessions/sealed-brief.json"
+    - "!evals/peer-sessions/corpus-index.json"
+    - "!evals/package-lock.json"
