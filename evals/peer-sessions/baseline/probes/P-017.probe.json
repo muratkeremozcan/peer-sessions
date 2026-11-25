@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 6,
+  "parentDigest": null,
+  "revisionCount": 0,
+  "probeId": "P-017",
+  "probeClass": "zero-action",
+  "behaviorId": "B-008",
+  "systemId": "peer-sessions",
+  "implementationDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
+  "artifactDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
+  "commitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
+  "rationale": "[representative] Clean control for B-008 at step teardown-split.",
+  "qualification": {
+    "route": "clean-control",
+    "baselinePassEvidence": {
+      "storage": "public",
+      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-017/baseline-pass.json",
+      "privateRef": null,
+      "digest": "sha256:a261b1cb612c2ed1420c4cb8fda823c1e906b0880c0c9b33af5373ed81db21ad"
+    },
+    "revisionCommitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
+    "noKnownDefectStatement": "No known defect at revision 35e006c."
+  },
+  "expectedClean": true,
+  "defects": []
+}

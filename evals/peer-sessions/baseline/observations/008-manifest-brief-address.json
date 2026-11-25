@@ -1,0 +1,56 @@
+{
+  "legId": "manifest-brief-address",
+  "sequence": 8,
+  "workspace": "mutated:M-012",
+  "cwd": "<workspace>",
+  "request": {
+    "probeId": "manifest-brief-address",
+    "interfaceId": "peer-sessions-runner",
+    "operationId": "run-skill",
+    "kind": "cli",
+    "executable": "tea-skill-runner",
+    "subcommandPath": [],
+    "channels": {
+      "argument": {},
+      "option": {
+        "agent": "claude",
+        "skill-root": "peer-sessions",
+        "timeout-ms": "540000",
+        "model": "claude-opus-5-5",
+        "capability": "command-execution",
+        "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/brief-address/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/brief-address/projects\",\"HERDR_ENV\":\"1\",\"HERDR_PANE_ID\":\"wT:p1\",\"HERDR_WORKSPACE_ID\":\"wT\"}}"
+      },
+      "environment": [
+        "HOME",
+        "USER"
+      ],
+      "stdin": {
+        "kind": "text",
+        "value": "`peer-addr.py --me` printed `uds:/tmp/cc-socks/987654.sock` for your session. Write the brief you will send to peer `orbits`, asking it to summarise `docs/coordination-contract-v1.md` and reply to you. Do not call SendMessage; just write the brief.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"brief\" (the full brief text)."
+      }
+    }
+  },
+  "observation": {
+    "probeId": "manifest-brief-address",
+    "interfaceId": "peer-sessions-runner",
+    "operationId": "run-skill",
+    "kind": "cli",
+    "exitCode": 0,
+    "stdout": {
+      "kind": "json",
+      "value": {
+        "actionsRun": [
+          "Bash: cat peer-sessions/SKILL.md; ls peer-sessions",
+          "Bash: ls -la docs/coordination-contract-v1.md peer-sessions/docs/coordination-contract-v1.md; pwd"
+        ],
+        "tellUser": "I wrote the brief for `orbits` and did not send it. I left out your `uds:/tmp/cc-socks/987654.sock` address on purpose: the skill says a peer replies automatically to whoever messaged it, so the brief doesn't need a return address. The contract doc isn't at `docs/` in the working directory. It's at `peer-sessions/docs/coordination-contract-v1.md`, so the brief gives the peer that absolute path, since its own working directory is different. The brief also asks for a fixed reply format and tells the peer to only read and summarise, without editing anything.",
+        "brief": "Please read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-362f8ce9-e9df-4997-86af-13936442f98c/target/peer-sessions/docs/coordination-contract-v1.md and summarise it.\n\nCover: what the contract is for, the receipt/JSON inventory fields and what each one means, the failure states (denied / unknown / failed / blocked) and what the caller should do for each, how --correlate IDs are echoed back, and any versioning or compatibility rules.\n\nScope: read and summarise only. Do not edit, create or delete any files, and do not run the spawn or teardown scripts.\n\nWhen you're done, reply to me with your summary in this format:\norbits done: <summary as 5-10 bullet points, then one line listing anything in the doc that is unclear or contradictory, or 'none'>"
+      }
+    },
+    "stderr": {
+      "kind": "text",
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":38399,\"outputTokens\":1092,\"costUsd\":\"0.0769666\"}\n"
+    },
+    "artifacts": {}
+  }
+}

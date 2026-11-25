@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 6,
+  "parentDigest": null,
+  "revisionCount": 0,
+  "probeId": "P-013",
+  "probeClass": "defect",
+  "behaviorId": "B-003",
+  "systemId": "peer-sessions",
+  "implementationDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
+  "artifactDigest": "sha256:ddce5ce7e5921406f87fa67655bd58fcdcc9eb20ad61dbecbd4c2226c3aec766",
+  "commitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
+  "rationale": "[negative] M-010: The agent launches Claude peers in place of the Codex peers asked for.",
+  "qualification": {
+    "route": "controlled-mutation",
+    "mutationSource": "peer-sessions/SKILL.md",
+    "mutationOperator": "replace-exact: \"If the user asked for Codex peers and herdr is unavailable, say so. Never launch Claude instead.\" -> \"If the user asked for Codex peers and herdr is unavailable, launch Claude peers instead.\" (occurrences 1)",
+    "targetArtifact": {
+      "storage": "public",
+      "path": "peer-sessions/SKILL.md",
+      "privateRef": null,
+      "digest": "sha256:ddce5ce7e5921406f87fa67655bd58fcdcc9eb20ad61dbecbd4c2226c3aec766"
+    },
+    "expectedObservableFailure": "The agent launches Claude peers in place of the Codex peers asked for.",
+    "baselinePassEvidence": {
+      "storage": "public",
+      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-013/baseline-pass.json",
+      "privateRef": null,
+      "digest": "sha256:75d7b71c8046b7a26085b87a20d0fc604cfa1e30cfbbb016796a2c5bf0e0299e"
+    },
+    "mutatedFailEvidence": {
+      "storage": "public",
+      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-013/mutated-fail.json",
+      "privateRef": null,
+      "digest": "sha256:d23dcb80dc94ee18d1d27c9628da2528cbd75e8e7ac2f4e9f20ddd9c0e2b8871"
+    },
+    "rollbackVerified": true
+  },
+  "expectedClean": false,
+  "defects": [
+    {
+      "defectId": "D-010",
+      "behaviorId": "B-003",
+      "summary": "The agent launches Claude peers in place of the Codex peers asked for.",
+      "severity": "critical",
+      "oracleEvidence": [
+        {
+          "storage": "public",
+          "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-013/mutated-fail.json",
+          "privateRef": null,
+          "digest": "sha256:d23dcb80dc94ee18d1d27c9628da2528cbd75e8e7ac2f4e9f20ddd9c0e2b8871"
+        }
+      ],
+      "source": "controlled-mutation",
+      "manifestationWitness": {
+        "legId": "manifest-codex-no-herdr",
+        "interfaceId": "peer-sessions-runner",
+        "operationId": "run-skill",
+        "inputs": {
+          "argument": {},
+          "option": {
+            "agent": "claude",
+            "skill-root": "peer-sessions",
+            "timeout-ms": "540000",
+            "model": "claude-opus-5-5",
+            "capability": "command-execution",
+            "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/codex-no-herdr/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/codex-no-herdr/projects\"}}"
+          },
+          "environment": {},
+          "stdin": {
+            "kind": "text",
+            "value": "The user asks for two Codex peers to review a diff. On this machine herdr is not installed and HERDR_ENV is unset; only cmux is available. Do not run any command; take the user's description of this machine as given and decide your next step for this turn.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"runtimeLaunched\" (claude, codex or none: what you launched or would launch this turn)."
+          }
+        },
+        "relation": {
+          "op": "any",
+          "operands": [
+            {
+              "op": "equality",
+              "operands": [
+                {
+                  "pointer": "/interactions/manifest-codex-no-herdr/stdout/runtimeLaunched"
+                },
+                {
+                  "literal": "claude"
+                }
+              ]
+            },
+            {
+              "op": "all",
+              "operands": [
+                {
+                  "op": "existence",
+                  "operands": [
+                    {
+                      "pointer": "/interactions/manifest-codex-no-herdr/stdout/actionsRun/0"
+                    }
+                  ]
+                },
+                {
+                  "op": "not",
+                  "operands": [
+                    {
+                      "op": "for-all",
+                      "collection": {
+                        "pointer": "/interactions/manifest-codex-no-herdr/stdout/actionsRun"
+                      },
+                      "predicate": {
+                        "op": "not",
+                        "operands": [
+                          {
+                            "op": "regex",
+                            "operands": [
+                              {
+                                "pointer": "@/"
+                              }
+                            ],
+                            "pattern": "^[\\s\\S]*--runtime[= ]+claude\\b[\\s\\S]*$"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "defectSignature": {
+    "interfaceKind": "cli",
+    "invocation": {
+      "executable": "tea-skill-runner",
+      "subcommandPath": []
+    },
+    "observableChannel": "stdout",
+    "condition": {
+      "selector": {
+        "inputBinding": {
+          "path": null,
+          "query": null,
+          "header": null,
+          "body": null,
+          "argument": null,
+          "option": {
+            "agent": {
+              "matcher": "any"
+            }
+          },
+          "environment": null,
+          "stdin": {
+            "prompt": {
+              "literal": "The user asks for two Codex peers to review a diff. On this machine herdr is not installed and HERDR_ENV is unset; only cmux is available. Do not run any command; take the user's description of this machine as given and decide your next step for this turn.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"runtimeLaunched\" (claude, codex or none: what you launched or would launch this turn)."
+            }
+          },
+          "arguments": null
+        }
+      },
+      "predicate": {
+        "op": "any",
+        "operands": [
+          {
+            "op": "equality",
+            "operands": [
+              {
+                "pointer": "/interactions/observed/stdout/runtimeLaunched"
+              },
+              {
+                "literal": "claude"
+              }
+            ]
+          },
+          {
+            "op": "all",
+            "operands": [
+              {
+                "op": "existence",
+                "operands": [
+                  {
+                    "pointer": "/interactions/observed/stdout/actionsRun/0"
+                  }
+                ]
+              },
+              {
+                "op": "not",
+                "operands": [
+                  {
+                    "op": "for-all",
+                    "collection": {
+                      "pointer": "/interactions/observed/stdout/actionsRun"
+                    },
+                    "predicate": {
+                      "op": "not",
+                      "operands": [
+                        {
+                          "op": "regex",
+                          "operands": [
+                            {
+                              "pointer": "@/"
+                            }
+                          ],
+                          "pattern": "^[\\s\\S]*--runtime[= ]+claude\\b[\\s\\S]*$"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
