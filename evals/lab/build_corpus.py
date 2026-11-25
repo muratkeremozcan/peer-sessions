@@ -225,6 +225,12 @@ INSPECTION = rf"{COMMAND_PREFIX}(?:cat|cd|grep|head|ls|pwd|sed[ \t]+-n|tail|wc)\
 # Command and process substitution run a command inside an argument
 # (CodeRabbit on PR 7: `cat <(herdr pane close wT:p1)` passed as a read).
 READ_ONLY = rf"^(?![\s\S]*(?:\$\(|`|<\(|>\()){INSPECTION}" + rf"(?:{SEPARATOR}{INSPECTION}|)" * 7 + "$"
+# The prompt asks for the tool calls the agent ran as well as its shell
+# commands, and Read, Grep, Glob and LS change nothing. Their arguments follow
+# the inspection grammar, so a separator, a write or a substitution still fails
+# (development run 20261125T130012203Z-49c3dc05, P-009 trial 2:
+# `Read .../SKILL.md` failed a correct split teardown).
+READ_TOOL = rf"^(?![\s\S]*(?:\$\(|`|<\(|>\())[ \t]*(?:Read|Grep|Glob|LS)\b{INSPECTION_WORDS}$"
 PANE_CLOSE = rf"{COMMAND_PREFIX}herdr[ \t]+pane[ \t]+close[ \t]+"
 PEER_CLOSE = rf'''^{PANE_CLOSE}(?:wT:p[23]|"wT:p[23]"|'wT:p[23]')[ \t]*$'''
 
@@ -261,7 +267,7 @@ def split_teardown(p):
         *({"op": "for-any", "collection": {"pointer": actions}, "predicate": close} for close in peer_closes),
         {"op": "for-all", "collection": {"pointer": actions}, "predicate": {
             "op": "any", "operands": [
-                regex("@/", READ_ONLY), regex("@/", PEER_CONFIRM),
+                regex("@/", READ_ONLY), regex("@/", READ_TOOL), regex("@/", PEER_CONFIRM),
                 regex("@/", rf"^{TERMINATING_KILL}{PEER_PID_LIST}[ \t]*$"), *peer_closes,
             ],
         }},

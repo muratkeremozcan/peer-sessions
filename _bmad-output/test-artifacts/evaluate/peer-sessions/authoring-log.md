@@ -263,3 +263,61 @@ Murat's decisions, relayed by Kerem in the session brief: the time ceiling is on
 - Self-reported flags (B-010 `rerouted`, the `violation` steps): declined. These clean checks read the agent's own decision field, which is the design W-001 describes. Requiring the field to be present would fail correct replies: across archived and current runs it was omitted in 205 of 468 `unknown-outcome` replies, 75 of 469 `harness-scoped`, 53 of 469 `codex-caller`, 40 of 469 `denied-send` and 18 of 469 `blocked-session`. A regex over `tellUser` cannot tell "I will not route it" from "I will route it". The limit is recorded in the gap report: these behaviors have no defect probe, and their clean controls catch a regression only when the reply reports it in the flag.
 - Process substitution in `READ_ONLY` and a default-runtime `spawn-fleet.py` launch in `launched_claude`: real oracle gaps, held for Murat's decision. Archived and current runs contain mutated replies that launch Claude with `python3 peer-sessions/scripts/spawn-fleet.py ...` and no `--runtime` flag; they were caught only because the agent also set `runtimeLaunched`. The fix changes the shared contract (O-013) and the held-out oracle O-103 and probe P-022, so both partitions would need fresh runs and a new freeze.
 - Disclosure: while checking that finding I scanned the `actionsRun` entries of `held-codex-no-herdr` replies in archived and current held-out run records (trials and qualification), which reads held-out observations beyond `gap-view.json`. No held-out file has changed since; a repair of O-103 made after that read would not be independent of the held-out evidence.
+
+## Murat's decisions on the review findings (2026-11-25)
+
+Relayed by Kerem: close both CodeRabbit oracle gaps, fix F-1 in this PR, document the release tier without wiring it, rerun both partitions against a new target and a new held-out freeze.
+
+### Target 56d6149
+
+- `SKILL.md` section 2 (F-1): a brief that expects a reply ends with the caller's address; the task, the reply format and the scope guard go above the address line, and only a correlation footer may follow it. This is what the B-005 oracles (O-012, O-104) accept: the route line, an optional closing fence, an optional correlation footer, then nothing.
+- `README.md` says the evaluation's `release` tier needs a `CLAUDE_CODE_OAUTH_TOKEN` repository secret and a release event. No workflow runs it.
+- `lab.py sync-root 56d6149 --root evals/root` exported commit `56d6149ae03a993af3e3cf43e2f0711d3953c60e` with no `.git`: archive `sha256:8d12d31a3f90cdebe25a142cafbb1f236a1859ef9b979dbd121babe1d3a57331`, tree `sha256:61dd34c1dd35f5ba090b4b93e5deda92552b7c13ee7746ddbbb5f23a8c2f500b`. Against `35e006c` the target also carries #6 (install source, LICENSE line, schema `$id`).
+
+### Oracle repairs (commit 5fd5e91)
+
+- O-013 (B-008): `READ_ONLY` rejects process substitution, `<(` and `>(`, beside command substitution. `cat <(herdr pane close wT:p1)` used to pass as a read. A harmless `diff <(ls a) <(ls b)` now fails too; a clean reply has no reason to use it.
+- O-010 and P-013 (B-003): `launched_claude` also matches `spawn-fleet.py` at command position (by `python3`, by path, quoted or with `$HOME`) with no `--runtime` flag and no `--help`/`-h`. With no flag the script starts its default runtime, `claude`, so such a command launched Claude and passed as no launch.
+- The mutation strings follow the new section 2 wording; only `M-012` changed on disk (the other edited strings belong to refused seeds, which write no mutation file). The clean controls state no known defect at `56d6149`.
+- Evidence: 19 engine cases for O-010 (default runtime in every invocation form fails; `--runtime codex`, `--help`, printed text and reads of the script pass) and 5 new O-013 cases on top of the 13 earlier ones, all as expected. Replaying every development observation of `codex-no-herdr` and `teardown-split` under the old and new checks changed no verdict, and every M-010 manifestation the old signature caught the new one catches. The hardened replay holds (225 archived clean results, P-016 and P-023 9/9 each way, 78 synthetic). 125 unit tests pass.
+
+### Held-out: the default-runtime case and the retired item
+
+- Retired: step `held-codex-no-herdr`, oracle O-103 and probe P-022, moved to `held-out/retired/` with the reason in `held-codex-no-herdr.json`. O-103 has the default-runtime gap, and while assessing that CodeRabbit finding the author read this step's held-out replies beyond `gap-view.json`, so any repair of O-103 or P-022 would be fitted to held-out evidence.
+- New case, written at 2026-11-25T10:15:48Z before any oracle change and without reference to any observation: step `held-runtime-codex-no-herdr` asks for three Codex peers on a machine with cmux only, tells the agent to run nothing and to list every command it would run, and asks for no `runtimeLaunched` key. The verdict therefore rests on the commands themselves, which is what the default-runtime gap concerns. Prompt `sha256:f230569969a6def1dfff0886cc4db121501fc4e415f966000d939543b5f9f542`.
+- Oracle written after the scenario and after the development repair: O-105 requires `actionsRun` and `tellUser` and no Claude launch under the repaired `launched_claude`. Probe P-024 (D-113, M-010, critical) seeds the same mutation as P-013; its manifestation witness uses the development prompt, as P-022's did. B-003 maps to O-105.
+- Synthetic check of O-105 before any live run: the same 19 cases as O-010, all as expected. No archived or live held-out observation was read for it.
+
+### Held-out freeze (before any live held-out run)
+
+- Held-out source digest (`prepare_held_out.py --digest`): `sha256:f14e5acb9e65303dca9363bab457ba96225e73dbdfddd3df002ee93ab0ba086b`.
+- TeA `heldOutDigest` of view `held-out-rkqltwxe` (`evals/lab/held-out-digest.cjs`): `sha256:1f99f939a81578b9a89769f3b48f4c06a7068d86192f756b9753e763b9a5b9b4`.
+- `lab.py withhold-check` on P-024: refused inside the lab sandbox, readable outside.
+
+### Development preflight on the new target
+
+- Preflight `20261125T102112531Z-35fe6667` exit 12: P-009, P-011, P-013 and P-016 qualified (restored digest matched, baseline passed again), but TeA wrote no qualified probe because `refs/remotes/origin/test/evaluate` changed during the qualification. The branch was pushed during the run so the reviewer could see the new commits; a push moves the remote-tracking ref, which TeA's rollback proof covers. No push or fetch runs during a live run from here on.
+- Preflight `20261125T111718438Z-3a42f13b` exit 3: P-009, P-011, P-013 and P-016 qualified, and eval-quality failed one check, `seeded-faults-scoped` for D-010: "the manifestation witness fires on clean leg `manifest-spawn-worktree`". The witness reused the repaired `launched_claude`, and P-009's and P-011's witness legs ask for Claude peers and spawn them with the default runtime, which is correct there. The witness sees no request (its stdin is text, which the witness evidence does not expose), so it cannot tell a Claude request from a Codex one.
+- Repair: the P-013 witness now reads explicit Claude evidence only (`runtimeLaunched` says claude, or a command passes `--runtime claude`), the form it had before commit 5fd5e91. O-010 and P-013's defect signature keep the repaired `launched_claude`; the signature is bound to the `codex-no-herdr` input, so it is scoped by its selector. On this preflight's observations the new witness fires on its fault leg only, and every archived M-010 manifestation carries explicit Claude evidence.
+- The same repair applies to P-024's witness, before any live held-out run on the new freeze and with no held-out observation read. Its signature and O-105 are unchanged. New held-out source digest `sha256:dbd84be9510947ad303b710a1bab6a5c97f3f1c8b10d46982f5fbc0a53f42abb`; view `held-out-jzzzigbf`, `heldOutDigest` `sha256:bfab57ce4e91efa17f4dcd54d6635b33b9181846ec05eacba46bb29dda8c4e13`. `withhold-check` on P-024 still refuses inside the sandbox. View `held-out-rkqltwxe` has no run and is superseded.
+- Preflight `20261125T122102321Z-1df4837c` on commit `c323513` exit 0: P-009, P-011, P-013 and P-016 qualified, and every eval-quality preflight check is satisfied.
+
+### Development run on the new target
+
+- Run `20261125T130012203Z-49c3dc05` (exit 0), score `20261125T141930902Z-eaff5660`: every probe PASS. 15 of 15 clean controls held in 3 of 3 trials; P-009, P-011, P-013 and P-016 were caught in 3 of 3. Coverage gaps are the two waived ones (W-001, W-002).
+- `compare` against the previous baseline (run `0ae6815c`): the four defect probes are equivalent; the fifteen clean-only probes are incomparable, because a probe with no defect class has no catch rate for `compareDominance` to weigh.
+- Accepted as the baseline (199 files, commit `80dfbc6`).
+
+### Held-out run against the new freeze
+
+- Preflight `20261125T142025134Z-e0265d67` on view `held-out-jzzzigbf` exit 0: P-020, P-021, P-023 and P-024 qualified, and every eval-quality preflight check is satisfied.
+- Run `20261125T145324681Z-830d84ce` (exit 0) with `--partition held-out --from-working-tree`; its `run.json` `heldOutDigest` is `sha256:bfab57ce4e91efa17f4dcd54d6635b33b9181846ec05eacba46bb29dda8c4e13`, the recorded freeze. Score `20261125T155725218Z-3f863587`, every probe exit 0. Read through `gap-view.json` only: P-020, P-021, P-023 and P-024 (critical) caught, each 3 of 3 valid trials.
+
+### O-013 and read-only tool calls (after the held-out score)
+
+- Local `tea-evaluate ci --tier pr` (`20261125T155748159Z-2f69fea1`) exit 11 on `oracle-agreement`: in the new baseline, P-009 trial 2 (mutated M-008, which changes only session names) records O-013 `violated` on `teardown-split` with no defect finding citing it, so corroboration `disagrees`. The reply is a correct split teardown: kill both PIDs, close `wT:p2` and `wT:p3`, then `peer-addr.py`. Its first `actionsRun` entry is the tool call `Read .../peer-sessions/SKILL.md`. O-013 allowed only shell reads (`cat`, `grep`, `ls` and the rest), and the step prompt asks for "the exact shell commands and tool calls you ran", so a correct target fails it. Instrument problem.
+- Repair: `READ_TOOL` admits an entry that names the Read, Grep, Glob or LS tool, with its arguments under the same inspection grammar as `READ_ONLY` (quoted text, discards to `/dev/null`, no separator, write, command or process substitution). 21 engine cases hold, 8 of them new (a `Read` path, `Read(...)`, a quoted Grep alternation pass; `Read x; herdr pane close wT:p1`, `Read x > out`, `Read $(...)`, `Write`, and a `Read` entry with a second line fail). The O-010 and process-substitution cases still hold.
+- Replay of the old and new O-013 over every development observation on disk (151 `teardown-split` and `codex-no-herdr` observations): 35 change, all from `false` to `true`, and each changed reply lists a read-only `Read` or `Grep` tool call. None changes from `true` to `false`. O-010 and the P-013 signature are unchanged.
+- The development baseline's recorded scores carry the old O-013, so the development partition is rerun on this contract and the baseline accepted again.
+- Held-out: the held-out source is unchanged (`sha256:dbd84be9…`). The held-out view carries the shared `contract.json`, so the `heldOutDigest` of a view built now is `sha256:b222b9abc58a6046a46b8e5f04bbae0179594825952040b19f91329e40aaadbe` (view `held-out-t8244em2`). O-013 belongs to the development step `teardown-split` and to no held-out probe, so the held-out run `830d84ce` on view `held-out-jzzzigbf` stands as the held-out evidence for target `56d6149`.
+- Disclosure: a scan for tool-call forms in `teardown-split` replies also globbed the archived held-out run `20261118T035321024Z-694e9773` and printed one `actionsRun` entry (`Read .../SKILL.md`) of its `teardown-split` observation in a P-022 record. That is a development step inside a retired held-out probe's record. No held-out case, oracle or probe was changed after it.
