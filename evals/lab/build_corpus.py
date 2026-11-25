@@ -260,13 +260,12 @@ def split_teardown(p):
 
     peer_closes = [regex("@/", rf'''^{PANE_CLOSE}(?:{pane}|"{pane}"|'{pane}')[ \t]*$''')
                    for pane in ("wT:p2", "wT:p3")]
+    # B-008 asks for kill first, close second and the caller's pane and
+    # workspace kept. The peer-addr.py confirmation is allowed anywhere and
+    # required nowhere: correct teardowns that leave it to tellUser were
+    # failing (baseline 71e0f66e, P-011 trial 1). The list stays bounded.
     return {"op": "all", "operands": [
-        {"op": "any", "operands": [
-            {"op": "all", "operands": [
-                regex(f"{actions}/{index}", PEER_CONFIRM),
-                {"op": "absence", "operands": [{"pointer": f"{actions}/{index + 1}"}]},
-            ]} for index in range(SPLIT_TEARDOWN_LIMIT)
-        ]},
+        {"op": "absence", "operands": [{"pointer": f"{actions}/{SPLIT_TEARDOWN_LIMIT}"}]},
         *(killed_before_close(pid, 0, SPLIT_TEARDOWN_LIMIT) for pid in (971001, 971002)),
         *({"op": "for-any", "collection": {"pointer": actions}, "predicate": close} for close in peer_closes),
         {"op": "for-all", "collection": {"pointer": actions}, "predicate": {
