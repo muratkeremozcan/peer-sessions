@@ -94,6 +94,19 @@ def prepare():
         probe["defectSignature"]["condition"]["predicate"] = bc.fill(
             bc.missing_reply_footer(address), "/interactions/observed/stdout",
         )
+        # The manifestation witness comes from the same function, so the two
+        # cannot drift apart (held-out preflight 20261125T011503703Z-216b2505
+        # failed seeded-faults-scoped on a witness left on the old form).
+        witness = probe["defects"][0]["manifestationWitness"]
+        witness_addresses = set(re.findall(
+            r"uds:/tmp/cc-socks/[0-9]+\.sock", json.dumps(witness["inputs"]),
+        ))
+        if len(witness_addresses) != 1:
+            raise ValueError("P-023's manifestation witness must name exactly one reply address")
+        witness["relation"] = bc.fill(
+            bc.missing_reply_footer(witness_addresses.pop()),
+            f"/interactions/{witness['legId']}/stdout",
+        )
         probe_file.write_text(json.dumps(probe, indent=2) + "\n")
         for verb in ("digest", "check"):
             subprocess.run([TEA, verb, "--evaluation", folder], stdout=subprocess.DEVNULL, check=True)
