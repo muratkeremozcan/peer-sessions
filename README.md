@@ -19,6 +19,22 @@ Or copy this folder into `~/.claude/skills/peer-sessions/`.
 - The herdr backend runs only from inside a herdr pane (`HERDR_ENV=1`), because herdr allows control only from a herdr-managed caller.
 - Python 3.9 or newer. The scripts use the standard library only.
 
+## One-time setup
+
+A new peer can stop at a folder-trust prompt before it reads its brief. Trust the repository once so peers start without one:
+
+- **Claude:** open `claude` once in the main checkout and accept the trust prompt. Linked worktrees inherit that trust.
+- **Codex:** add the main checkout to `~/.codex/config.toml`:
+
+  ```toml
+  [projects."/absolute/path/to/main/checkout"]
+  trust_level = "trusted"
+  ```
+
+Tool approvals are a separate setting: start Claude peers with `--permission-mode auto`, and set Codex's own approval policy for Codex peers.
+
+The skill never answers a trust or approval prompt itself. A peer that stops at one is reported as `blocked`, and the user decides.
+
 ## Backends and runtimes
 
 `--backend auto|cmux|herdr` picks the multiplexer. An explicit choice wins. `auto` picks herdr when the script runs inside a herdr pane, else cmux if it is on `PATH`, else herdr.
