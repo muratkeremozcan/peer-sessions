@@ -64,7 +64,7 @@ SendMessage(to: "uds:/tmp/cc-socks/17466.sock", message: "...")
 
 **The first send with a bare name always bounces** — "not an agent in this conversation, re-send with the ref". That is a confirmation, not a failure. Copy the `[ref]` from the error and send again. Send all briefs in one batch. They bounce together and you re-send them together. A `uds:` address does not bounce.
 
-Each brief that expects a reply must end with your literal address (from `peer-addr.py --me`), because the peer cannot find out who you are:
+Each brief that expects a reply must end with your literal address (from `peer-addr.py --me`), because the peer cannot find out who you are. Write the task, the reply format and the scope guard above the address line; only a correlation footer (below) may follow it:
 
 ```
 When done, message me back:
