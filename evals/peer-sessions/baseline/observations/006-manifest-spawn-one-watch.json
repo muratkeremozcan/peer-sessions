@@ -41,18 +41,18 @@
       "value": {
         "actionsRun": [
           "Bash: rm -rf .peer-lab/spawn-one-watch",
-          "Read: peer-sessions/SKILL.md",
-          "Bash: ls -la lab lab/x lab/y peer-sessions/scripts; git -C lab/x rev-parse --abbrev-ref HEAD; git -C lab/y rev-parse --abbrev-ref HEAD",
-          "Bash: grep -n -i -A3 \"\\-\\-dirs\\|README\\|mkdir\\|create\" peer-sessions/references/placement.md | head -60; python3 peer-sessions/scripts/spawn-fleet.py --help | head -60",
+          "Bash: cat peer-sessions/SKILL.md; ls -R peer-sessions | head -50",
+          "Bash: ls -la lab lab/x lab/y 2>&1; git -C lab/x rev-parse --abbrev-ref HEAD 2>&1; git -C lab/y rev-parse --abbrev-ref HEAD 2>&1",
+          "Bash: grep -n -i -A3 \"\\-\\-dirs\\|create\" peer-sessions/references/placement.md | head -40; python3 peer-sessions/scripts/spawn-fleet.py --help 2>&1 | head -60",
           "Bash: python3 peer-sessions/scripts/spawn-fleet.py --placement workspace x-readme-skim:lab/x y-readme-skim:lab/y"
         ],
-        "tellUser": "Both peers are running in one new herdr workspace, wF1: `x-readme-skim` in pane p1 (lab/x) and `y-readme-skim` in pane p2 (lab/y). Neither has a brief yet. lab/x and lab/y did not exist before this, so the spawn script created them, and they are empty. There are no READMEs for the peers to skim yet. Add a README to each folder, or tell me which READMEs to point them at, before the briefs go out. The sessions are named after the work because these folders have no git branch. The fleet stays up until you ask me to close it. Teardown: `herdr workspace close wF1`, then run `python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py` to confirm both sessions have stopped. To resume after a reboot, run `claude --resume x-readme-skim` from lab/x, or `claude --resume y-readme-skim` from lab/y.",
+        "tellUser": "Both Claude peers are running and ready to receive messages. They're in a new herdr workspace, wF1: x-readme-skim is in lab/x (pane wF1:p1) and y-readme-skim is in lab/y (pane wF1:p2). Neither folder existed or had a git branch, so the spawn script created both folders and I named each session after its task. No briefs have been sent yet.\n\nThe sessions will keep running until you ask me to close them. To close them yourself, run these commands from the spawn script:\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\n\nTo resume a session after a reboot:\n  cd lab/x && claude --resume x-readme-skim\n  cd lab/y && claude --resume y-readme-skim",
         "placement": "workspace"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":74358,\"outputTokens\":1838,\"costUsd\":\"0.1242564\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":73127,\"outputTokens\":1568,\"costUsd\":\"0.1148272\"}\n"
     },
     "artifacts": {}
   }

@@ -43,12 +43,12 @@
           "Bash: cat peer-sessions/SKILL.md; ls peer-sessions"
         ],
         "teardownRun": false,
-        "tellUser": "Both peers are done. Replies: `orbits done` and `planets done`. I've left both sessions running because you didn't ask me to close them. They still have their context, so a follow-up question takes one message and no re-spawn. While they're up they use some memory and CPU and keep two workspaces open, w7 and w8. To shut them down, ask me or run this yourself. It stops the processes first and then closes the workspaces:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8"
+        "tellUser": "Both peers have finished: orbits and planets each replied 'done'. I've left both sessions running because you didn't ask me to close them. A live peer keeps its context, so a follow-up question to either one is a single message instead of a fresh start. Until you close them, the two sessions use memory and take up two herdr workspaces (w7, w8), but they cost no tokens while idle. To close them, run this or ask me to. Kill the processes first, because closing a workspace doesn't stop the session inside it:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24212,\"outputTokens\":345,\"costUsd\":\"0.0436128\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24194,\"outputTokens\":365,\"costUsd\":\"0.043962400000000006\"}\n"
     },
     "artifacts": {}
   }

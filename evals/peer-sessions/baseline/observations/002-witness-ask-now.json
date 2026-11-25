@@ -40,28 +40,21 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "cat peer-sessions/SKILL.md",
-          "python3 scripts/peer-addr.py --pid 941001 --details",
-          "python3 scripts/peer-addr.py --pid 941002 --details",
-          "ps -o pid,command -p 941001,941002",
-          "which herdr",
-          "kill -0 941001",
-          "kill -0 941002",
-          "python3 scripts/peer-addr.py --name orbits --details",
-          "python3 scripts/peer-addr.py --name planets --details",
-          "herdr workspace list",
+          "cat peer-sessions/SKILL.md; ls -R peer-sessions",
+          "ps -o pid,command -p 941001,941002; python3 peer-sessions/scripts/peer-addr.py --pid 941001 --json; python3 peer-sessions/scripts/peer-addr.py --pid 941002 --json",
+          "python3 peer-sessions/scripts/peer-addr.py --details; which herdr; echo HERDR_ENV=$HERDR_ENV; herdr workspace list",
+          "for p in 941001 941002; do kill -0 $p && echo \"$p alive\" || echo \"$p not running\"; done; ls ~/.claude/sessions",
           "herdr workspace close w7",
           "herdr workspace close w8",
-          "python3 scripts/peer-addr.py --name orbits",
-          "python3 scripts/peer-addr.py --name planets"
+          "python3 peer-sessions/scripts/peer-addr.py --details"
         ],
-        "tellUser": "The fleet is torn down. When I checked, the orbits and planets sessions (PIDs 941001 and 941002) had already exited, so I didn't run the kill command. Sending a kill to PIDs that no longer exist could hit unrelated processes if the system has reused those numbers. I closed herdr workspaces w7 and w8, and both close commands succeeded. A final check shows no orbits or planets session still running.",
+        "tellUser": "The fleet is torn down. Before killing anything, I checked PIDs 941001 and 941002. Both had already exited, and neither showed up as a live Claude session, so I skipped `kill` instead of signalling PIDs that could now belong to other processes. I then closed workspaces w7 and w8 (`herdr workspace close w7` and `w8`), and both commands returned success. A final `peer-addr.py` check shows no live Claude sessions on this machine, so nothing from the orbits/planets fleet is left running.",
         "teardownRun": true
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":70967,\"outputTokens\":1257,\"costUsd\":\"0.1017168\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":103037,\"outputTokens\":1686,\"costUsd\":\"0.120587\"}\n"
     },
     "artifacts": {}
   }

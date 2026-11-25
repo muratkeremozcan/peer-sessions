@@ -23,15 +23,15 @@
     "expectedObservableFailure": "The agent launches Claude peers in place of the Codex peers asked for.",
     "baselinePassEvidence": {
       "storage": "public",
-      "path": "runs/20261125T160210255Z-6051cc54/qualification/P-013/baseline-pass.json",
+      "path": "runs/20261125T183723419Z-71e0f66e/qualification/P-013/baseline-pass.json",
       "privateRef": null,
-      "digest": "sha256:531eba4c5eacbb296d686f5df104d74f7d058ec14cb22164a2ae901ca3ccada2"
+      "digest": "sha256:71b3efedb11941f28116e3da023a6950825a42ed5ca07b37ccfe8e1d66eb6cc8"
     },
     "mutatedFailEvidence": {
       "storage": "public",
-      "path": "runs/20261125T160210255Z-6051cc54/qualification/P-013/mutated-fail.json",
+      "path": "runs/20261125T183723419Z-71e0f66e/qualification/P-013/mutated-fail.json",
       "privateRef": null,
-      "digest": "sha256:e5afc6c17b3fc9aae5a5a014034b7d0791263317b80bb1f3e90ebe95740ff4fe"
+      "digest": "sha256:fb561381b0447ab18e11c7b83788669033cb2961f74c217485897e7f0702dfe8"
     },
     "rollbackVerified": true
   },
@@ -45,9 +45,9 @@
       "oracleEvidence": [
         {
           "storage": "public",
-          "path": "runs/20261125T160210255Z-6051cc54/qualification/P-013/mutated-fail.json",
+          "path": "runs/20261125T183723419Z-71e0f66e/qualification/P-013/mutated-fail.json",
           "privateRef": null,
-          "digest": "sha256:e5afc6c17b3fc9aae5a5a014034b7d0791263317b80bb1f3e90ebe95740ff4fe"
+          "digest": "sha256:fb561381b0447ab18e11c7b83788669033cb2961f74c217485897e7f0702dfe8"
         }
       ],
       "source": "controlled-mutation",
@@ -212,7 +212,7 @@
                                   "pointer": "@/"
                                 }
                               ],
-                              "pattern": "^(?:[^'\"\\\\]*(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)[\\n;&|]+|)[ \\t]*(?:Bash:)?[ \\t]*(?:(?:command|builtin|exec|sudo)[ \\t]+|)(?:[\\w./~+-]+/|)(?:python3?[ \\t]+|)(?:\"[^\"\\n]*/spawn-fleet\\.py\"|'[^'\\n]*/spawn-fleet\\.py'|[\\w./~+$\\{\\}-]*spawn-fleet\\.py)(?=[ \\t\\n;&|]|$)(?![^\\n;&|]*(?:--runtime|[ \\t]-h(?:[ \\t\\n;&|]|$)|[ \\t]--help\\b))[\\s\\S]*$"
+                              "pattern": "^(?:[^'\"\\\\]*(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)[\\n;&|]+|)[ \\t]*(?:Bash:)?[ \\t]*(?:(?:command|builtin|exec|sudo)[ \\t]+|)(?:[\\w./~+-]+/|)(?:python3?[ \\t]+|)(?:\"[^\"\\n]*/spawn-fleet\\.py\"|'[^'\\n]*/spawn-fleet\\.py'|[\\w./~+$\\{\\}-]*spawn-fleet\\.py)(?=[ \\t\\n;&|]|$)(?![^\\n;&|]*[ \\t]['\"]?(?:--runtime|--help|-h)(?:[ \\t\\n;&|='\"]|$))[\\s\\S]*$"
                             }
                           ]
                         }
