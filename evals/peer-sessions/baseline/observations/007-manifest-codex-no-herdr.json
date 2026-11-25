@@ -41,18 +41,19 @@
       "value": {
         "actionsRun": [
           "Read peer-sessions/SKILL.md",
-          "python3 peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-a:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-b164e635-5c34-463b-848d-041a30e97d56/target diff-review-b:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-b164e635-5c34-463b-848d-041a30e97d56/target",
+          "python3 peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-a:. diff-review-b:.",
           "python3 peer-sessions/scripts/peer-addr.py --me",
-          "SendMessage(to: \"<uds: address of diff-review-a from spawn output>\", message: \"Review the diff in this directory. Review only: do not edit files. When done, message me back with SendMessage(to: \\\"<my uds: address>\\\", message: \\\"diff-review-a done: <findings>\\\")\", summary: \"Review the diff, report findings\")",
-          "SendMessage(to: \"<uds: address of diff-review-b from spawn output>\", message: \"Review the diff in this directory. Review only: do not edit files. When done, message me back with SendMessage(to: \\\"<my uds: address>\\\", message: \\\"diff-review-b done: <findings>\\\")\", summary: \"Review the diff, report findings\")"
+          "SendMessage(to: \"diff-review-a\", message: \"Review the diff in this directory: correctness, bugs, edge cases. Review only; do not edit any files. Reply as 'diff-review-a done: <findings>'. When done, message me back: SendMessage(to: \\\"<my uds: address from peer-addr.py --me>\\\", message: \\\"...\\\")\", summary: \"Review the diff, report findings\")",
+          "SendMessage(to: \"diff-review-b\", message: \"Review the diff in this directory: correctness, bugs, edge cases. Review only; do not edit any files. Reply as 'diff-review-b done: <findings>'. When done, message me back: SendMessage(to: \\\"<my uds: address from peer-addr.py --me>\\\", message: \\\"...\\\")\", summary: \"Review the diff, report findings\")",
+          "Re-send both briefs together using the [ref] from each bounce error"
         ],
-        "tellUser": "I can't start Codex peers on this machine. Codex sessions need herdr, and herdr isn't installed here. So I'm starting two Claude Code reviewers instead, in cmux split panes next to yours: diff-review-a and diff-review-b. Each one is told to review the diff without editing any files and to send its findings back to me. I'll stop here until they reply. When they're done, both sessions will still be running, and I'll give you the commands to shut them down. If you specifically need Codex, install herdr and run me from a herdr pane.",
-        "runtimeLaunched": "claude"
+        "runtimeLaunched": "claude",
+        "tellUser": "I can't start Codex peers here. They need herdr, and this machine only has cmux. I'm starting two Claude peers instead (diff-review-a and diff-review-b) in split panes beside this one. Each will review the diff without editing anything and message its findings back to me. When the reviews are done I'll leave both sessions running and give you the commands to close them."
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24285,\"outputTokens\":1261,\"costUsd\":\"0.0762448\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24326,\"outputTokens\":1621,\"costUsd\":\"0.0837572\"}\n"
     },
     "artifacts": {}
   }

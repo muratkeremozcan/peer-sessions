@@ -40,15 +40,15 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "Bash: cat peer-sessions/SKILL.md; ls -R peer-sessions"
+          "Bash: cat peer-sessions/SKILL.md; ls peer-sessions"
         ],
         "teardownRun": false,
-        "tellUser": "Both peers have finished: `orbits done` and `planets done`. I've left the fleet running. Both `claude` sessions are still up in herdr workspaces w7 and w8, so you can ask either one a follow-up without starting over. While they're idle they use some memory and keep their workspaces open, but they don't use any tokens. When you want them closed, run this, or tell me to tear the fleet down:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nRun the kill first. Closing a workspace doesn't stop the session inside it."
+        "tellUser": "Both peers are done: `orbits done` and `planets done`. I left the fleet running because you didn't ask me to close it. The `orbits` and `planets` sessions are still live in workspaces w7 and w8, so a follow-up question to either one costs just one message. While they stay up they use memory and keep two workspace tabs open. When you want them gone, say \"tear it down\" or run this. It kills the sessions first, because closing a workspace alone leaves the claude processes running:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24460,\"outputTokens\":366,\"costUsd\":\"0.046094800000000005\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24209,\"outputTokens\":363,\"costUsd\":\"0.012117000000000001\"}\n"
     },
     "artifacts": {}
   }

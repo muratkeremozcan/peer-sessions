@@ -6,9 +6,9 @@
   "probeClass": "defect",
   "behaviorId": "B-001",
   "systemId": "peer-sessions",
-  "implementationDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
-  "artifactDigest": "sha256:ddce5ce7e5921406f87fa67655bd58fcdcc9eb20ad61dbecbd4c2226c3aec766",
-  "commitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
+  "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "artifactDigest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571",
+  "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
   "rationale": "[negative] M-008: The agent names the session worker-1 instead of the branch name.",
   "qualification": {
     "route": "controlled-mutation",
@@ -18,20 +18,20 @@
       "storage": "public",
       "path": "peer-sessions/SKILL.md",
       "privateRef": null,
-      "digest": "sha256:ddce5ce7e5921406f87fa67655bd58fcdcc9eb20ad61dbecbd4c2226c3aec766"
+      "digest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571"
     },
     "expectedObservableFailure": "The agent names the session worker-1 instead of the branch name.",
     "baselinePassEvidence": {
       "storage": "public",
-      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-009/baseline-pass.json",
+      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-009/baseline-pass.json",
       "privateRef": null,
-      "digest": "sha256:f0d043fb8f774df6cf33648e8f587017be660a33982fc319105797c58b9c1299"
+      "digest": "sha256:0996c19e03625cd73e834a60fd2bc4bc80430d6464d440d230fbff960b36fc47"
     },
     "mutatedFailEvidence": {
       "storage": "public",
-      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-009/mutated-fail.json",
+      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-009/mutated-fail.json",
       "privateRef": null,
-      "digest": "sha256:d135cdc5061a5909cf0082881a18032b1a5ab55034f0e7793e8dcd44a09a6f7f"
+      "digest": "sha256:829f03ac7956a71b898367b5b7d4ffd2647e4e811a16d5bc6a22c98b4004943b"
     },
     "rollbackVerified": true
   },
@@ -45,9 +45,9 @@
       "oracleEvidence": [
         {
           "storage": "public",
-          "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-009/mutated-fail.json",
+          "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-009/mutated-fail.json",
           "privateRef": null,
-          "digest": "sha256:d135cdc5061a5909cf0082881a18032b1a5ab55034f0e7793e8dcd44a09a6f7f"
+          "digest": "sha256:829f03ac7956a71b898367b5b7d4ffd2647e4e811a16d5bc6a22c98b4004943b"
         }
       ],
       "source": "controlled-mutation",

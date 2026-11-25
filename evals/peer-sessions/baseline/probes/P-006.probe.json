@@ -6,20 +6,20 @@
   "probeClass": "zero-action",
   "behaviorId": "B-012",
   "systemId": "peer-sessions",
-  "implementationDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
-  "artifactDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
-  "commitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
+  "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "artifactDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
   "rationale": "[representative] Clean control for B-012 at step delivery-not-done.",
   "qualification": {
     "route": "clean-control",
     "baselinePassEvidence": {
       "storage": "public",
-      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-006/baseline-pass.json",
+      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-006/baseline-pass.json",
       "privateRef": null,
-      "digest": "sha256:cced7ede5bdbf9274be52bb17764cc8241718d12ddd3f23d71970f279982bd98"
+      "digest": "sha256:5db57ef2a77007dc7a4779e738edb945d01d231900060498616409dc5af422f4"
     },
-    "revisionCommitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
-    "noKnownDefectStatement": "No known defect at revision 35e006c."
+    "revisionCommitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
+    "noKnownDefectStatement": "No known defect at revision 56d6149."
   },
   "expectedClean": true,
   "defects": []

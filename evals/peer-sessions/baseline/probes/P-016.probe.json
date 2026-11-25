@@ -6,32 +6,32 @@
   "probeClass": "defect",
   "behaviorId": "B-005",
   "systemId": "peer-sessions",
-  "implementationDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
-  "artifactDigest": "sha256:ddce5ce7e5921406f87fa67655bd58fcdcc9eb20ad61dbecbd4c2226c3aec766",
-  "commitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
+  "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "artifactDigest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571",
+  "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
   "rationale": "[negative] M-012: The brief ends without a reply address for the caller.",
   "qualification": {
     "route": "controlled-mutation",
     "mutationSource": "peer-sessions/SKILL.md",
-    "mutationOperator": "replace-exact: \"Each brief that expects a reply must end with your literal address (from `peer-addr.py --me`), because the peer cannot find out who you are:\\n\\n```\\nWhen done, message me back:\\nSendMessage(to: \\\"uds:/tmp/cc-socks/4667.sock\\\", message: \\\"...\\\")\\n```\" -> \"A peer replies to whoever messaged it automatically, so a brief needs no return address:\\n\\n```\\nWhen done, reply with your summary.\\n```\" (occurrences 1)",
+    "mutationOperator": "replace-exact: \"Each brief that expects a reply must end with your literal address (from `peer-addr.py --me`), because the peer cannot find out who you are. Write the task, the reply format and the scope guard above the address line; only a correlation footer (below) may follow it:\\n\\n```\\nWhen done, message me back:\\nSendMessage(to: \\\"uds:/tmp/cc-socks/4667.sock\\\", message: \\\"...\\\")\\n```\" -> \"A peer replies to whoever messaged it automatically, so a brief needs no return address:\\n\\n```\\nWhen done, reply with your summary.\\n```\" (occurrences 1)",
     "targetArtifact": {
       "storage": "public",
       "path": "peer-sessions/SKILL.md",
       "privateRef": null,
-      "digest": "sha256:ddce5ce7e5921406f87fa67655bd58fcdcc9eb20ad61dbecbd4c2226c3aec766"
+      "digest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571"
     },
     "expectedObservableFailure": "The brief ends without a reply address for the caller.",
     "baselinePassEvidence": {
       "storage": "public",
-      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-016/baseline-pass.json",
+      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-016/baseline-pass.json",
       "privateRef": null,
-      "digest": "sha256:0b879b7aa23c0a9fd5564a0ee00d93b93c4e9b1cedc541262f98ba61c8e28f69"
+      "digest": "sha256:76d5e1e649ed4b8f1d18235829d61f39c142ba363e047663c9f4d4189ff54a00"
     },
     "mutatedFailEvidence": {
       "storage": "public",
-      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-016/mutated-fail.json",
+      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-016/mutated-fail.json",
       "privateRef": null,
-      "digest": "sha256:8087b81e6bf4e023164c72b4bc3723ae9ea6a62fceaf230bc0828d0890b6cc61"
+      "digest": "sha256:89e8f8cc88cc10c788ce2daabe4558c011108ad7de9d892f80c2ec4c633696cb"
     },
     "rollbackVerified": true
   },
@@ -45,9 +45,9 @@
       "oracleEvidence": [
         {
           "storage": "public",
-          "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-016/mutated-fail.json",
+          "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-016/mutated-fail.json",
           "privateRef": null,
-          "digest": "sha256:8087b81e6bf4e023164c72b4bc3723ae9ea6a62fceaf230bc0828d0890b6cc61"
+          "digest": "sha256:89e8f8cc88cc10c788ce2daabe4558c011108ad7de9d892f80c2ec4c633696cb"
         }
       ],
       "source": "controlled-mutation",

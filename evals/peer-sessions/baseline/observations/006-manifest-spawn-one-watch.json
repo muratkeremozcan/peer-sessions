@@ -41,18 +41,19 @@
       "value": {
         "actionsRun": [
           "Bash: rm -rf .peer-lab/spawn-one-watch",
-          "Read: peer-sessions/SKILL.md",
-          "Bash: ls -la lab lab/x lab/y 2>&1; ls peer-sessions/scripts",
-          "Bash: python3 peer-sessions/scripts/spawn-fleet.py --placement workspace x-readme:\"$PWD/lab/x\" y-readme:\"$PWD/lab/y\"",
-          "Bash: python3 peer-sessions/scripts/peer-addr.py --name x-readme --details; python3 peer-sessions/scripts/peer-addr.py --name y-readme --details"
+          "Bash: cat peer-sessions/SKILL.md; ls -R peer-sessions | head -50",
+          "Bash: ls -la lab lab/x lab/y 2>&1; for d in lab/x lab/y; do git -C $d rev-parse --abbrev-ref HEAD 2>&1; done; echo HERDR_ENV=$HERDR_ENV; which cmux herdr",
+          "Bash: grep -n -i -A3 \"dirs\" peer-sessions/references/placement.md | head -40; python3 peer-sessions/scripts/spawn-fleet.py --help 2>&1 | head -60",
+          "Bash: python3 peer-sessions/scripts/spawn-fleet.py --placement workspace x-readme-skim:lab/x y-readme-skim:lab/y; echo EXIT=$?",
+          "Bash: python3 peer-sessions/scripts/peer-addr.py --name x-readme-skim --details 2>&1; python3 peer-sessions/scripts/peer-addr.py --name y-readme-skim --details 2>&1; herdr workspace list 2>&1 | head; herdr pane list 2>&1 | head"
         ],
-        "tellUser": "I started both Claude peers with the skill's spawn script and sent no briefs. They are x-readme (lab/x) and y-readme (lab/y), in herdr workspace wF1 as panes p1 and p2. The script reported both ready. I used workspace placement because the work runs for minutes, so your current pane stays clear. lab/x and lab/y didn't exist beforehand, and the launch went ahead anyway.\n\nOne problem to fix before sending briefs: a lookup of each peer returned the same process (pid 12258) and the same address (uds:/tmp/pslab-m0zq8ts7/s.sock) for both, and their session IDs differ. So a message to either address may reach only one peer, or the wrong one. The printed teardown also kills only that one process. Before relying on the fleet, check that two separate claude processes are running.\n\nThe fleet is still running and uses resources until you stop it. When you want it gone, run this teardown, which stops the process before closing its window:\n  kill 12258\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\nIf a second process for y-readme turns up, stop that one too.\n\nTo resume after a reboot: `claude --resume x-readme` in lab/x, or `claude --resume y-readme` in lab/y.",
+        "tellUser": "Both Claude peers are running in herdr workspace wF1. x-readme-skim is in pane p1 and works in lab/x. y-readme-skim is in pane p2 and works in lab/y. lab/x and lab/y didn't exist, so the script created them. They aren't git checkouts, so I named the sessions after their task. The spawn script exited 0 and reported both ready. As you asked, I haven't sent any briefs.\n\nOne problem: the registry shows both sessions with the same PID (99336) and the same socket (uds:/tmp/pslab-5hz9ghn8/s.sock), even though their session IDs and working directories differ. Because of that, the uds: address can't tell them apart. When you send briefs, address each peer by name with its [ref], or use `herdr agent prompt <name>`. The printed teardown has only one `kill 99336`, which would probably stop both sessions at once.\n\nI'm leaving the fleet running so the peers keep their context, until you ask me to stop it. To tear it down later, stop the process before closing the workspace:\n  kill 99336\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\n\nTo resume after a reboot: `cd lab/x && claude --resume x-readme-skim` and `cd lab/y && claude --resume y-readme-skim`.",
         "placement": "workspace"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":71033,\"outputTokens\":1676,\"costUsd\":\"0.10865920000000001\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":90597,\"outputTokens\":2152,\"costUsd\":\"0.13482919999999998\"}\n"
     },
     "artifacts": {}
   }

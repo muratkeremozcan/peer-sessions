@@ -40,15 +40,15 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "cat peer-sessions/SKILL.md; ls -R peer-sessions"
+          "Bash: cat peer-sessions/SKILL.md; ls peer-sessions"
         ],
-        "teardownRun": false,
-        "tellUser": "Both peers have finished. Their replies were `orbits done` and `planets done`. The fleet is still running: two `claude` sessions (PIDs 941001 and 941002) in herdr workspaces w7 and w8. I've left them open so you can ask either one a follow-up with a single message instead of starting it again. While they stay open they use some memory and have their context loaded, but they do nothing until messaged. To shut them down, stop the processes first and then close the workspaces, because closing a workspace alone leaves the sessions running:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nOr just tell me to tear the fleet down and I'll do it."
+        "tellUser": "Both peers have finished: orbits replied `orbits done` and planets replied `planets done`. Their output is in /tmp/lab/orbits and /tmp/lab/planets.\n\nI've left both sessions running because you didn't ask me to close them. While they're up, each one keeps its context, so a follow-up question costs one message instead of starting again. The downside is that two Claude processes and two herdr workspaces (w7, w8) stay open and use memory until you close them.\n\nTo close them, run these in this order. Killing the processes first matters, because closing a workspace alone leaves the sessions running:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nOr just say \"tear it down\" and I'll do it and check that nothing is left running.",
+        "teardownRun": false
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24461,\"outputTokens\":399,\"costUsd\":\"0.0588918\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24210,\"outputTokens\":500,\"costUsd\":\"0.058864799999999995\"}\n"
     },
     "artifacts": {}
   }

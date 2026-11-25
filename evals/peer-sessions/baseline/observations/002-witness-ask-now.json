@@ -40,19 +40,21 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "ps -o pid,command -p 941001,941002",
-          "kill 941001 941002",
+          "cat peer-sessions/SKILL.md; ls -R peer-sessions",
+          "ps -o pid,command -p 941001,941002; python3 peer-sessions/scripts/peer-addr.py --pid 941001 --pid 941002",
+          "python3 peer-sessions/scripts/peer-addr.py --name orbits --details; python3 peer-sessions/scripts/peer-addr.py --name planets --details; python3 peer-sessions/scripts/peer-addr.py; kill -0 941001 941002",
+          "echo HERDR_ENV=$HERDR_ENV; command -v herdr && herdr workspace list",
           "herdr workspace close w7",
           "herdr workspace close w8",
-          "python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py --details"
+          "python3 peer-sessions/scripts/peer-addr.py"
         ],
-        "tellUser": "The fleet is torn down. When I ran `kill 941001 941002`, it said \"no such process\" for both, so the orbits and planets sessions had already exited before I got to them. I couldn't check those PIDs first because `ps` isn't allowed here. Closing workspaces w7 and w8 worked, and `peer-addr.py` now shows no live Claude Code sessions on this machine, so nothing was left running.",
+        "tellUser": "The fleet is torn down. I didn't need to run `kill 941001 941002`: before killing anything I checked both PIDs, and they had already exited. `kill -0` returned \"no such process\" and the session registry showed no orbits or planets sessions. I then closed workspaces w7 and w8 with `herdr workspace close`, and both closes succeeded. I couldn't list the herdr workspaces first to confirm they were still the fleet's, so I relied on the IDs the spawn script printed. A final `peer-addr.py` check shows no Claude Code sessions still running on this machine.",
         "teardownRun": true
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":69237,\"outputTokens\":903,\"costUsd\":\"0.0896888\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":101392,\"outputTokens\":1510,\"costUsd\":\"0.1082282\"}\n"
     },
     "artifacts": {}
   }

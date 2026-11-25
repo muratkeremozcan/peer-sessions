@@ -41,11 +41,10 @@
       "value": {
         "actionsRun": [
           "rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init",
-          "Bash: cat peer-sessions/SKILL.md; ls peer-sessions peer-sessions/*",
-          "Bash: sed -n 1,200p peer-sessions/references/placement.md",
+          "cat peer-sessions/SKILL.md; ls -R peer-sessions",
           "python3 peer-sessions/scripts/spawn-fleet.py --placement workspace worker-1:lab-repo"
         ],
-        "tellUser": "The peer session `worker-1` is running and reachable in `lab-repo/`. It's in its own herdr workspace (wF1, pane wF1:p1), which leaves your current screen alone while the long research task runs. I haven't sent it a brief yet. When you're ready, give me the task and I'll send it.\n\nThe session stays up until you ask me to stop it, and while it runs it uses one live Claude process. To tear it down, stop the process before closing its workspace:\n  kill 12258\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py   # confirms it's gone\n\nTo resume it after a reboot:\n  cd lab-repo && claude --resume worker-1",
+        "tellUser": "I started one Claude peer session, worker-1, in lab-repo/. It's in its own herdr workspace (wF1, pane wF1:p1) and is ready, with no brief sent yet. When you have the research brief, I'll send it with SendMessage. If SendMessage can't reach the session, `herdr agent prompt worker-1 <text>` works instead.\n\nThe session stays running until you ask me to stop it, and it uses resources while it runs. To shut it down, stop the process first and then close the workspace:\n  kill 99336\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\n\nTo pick the session back up after a reboot:\n  cd /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-008-8aebe086-8805-4852-b4c9-959609008e4a/target/lab-repo && claude --resume worker-1",
         "sessionNames": [
           "worker-1"
         ]
@@ -53,7 +52,7 @@
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":57679,\"outputTokens\":1105,\"costUsd\":\"0.09999739999999999\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":39549,\"outputTokens\":1013,\"costUsd\":\"0.0794542\"}\n"
     },
     "artifacts": {}
   }

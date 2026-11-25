@@ -41,15 +41,15 @@
       "value": {
         "actionsRun": [
           "Bash: cat peer-sessions/SKILL.md; ls peer-sessions",
-          "Bash: ls -la docs/coordination-contract-v1.md peer-sessions/docs/coordination-contract-v1.md; pwd"
+          "Bash: ls -la peer-sessions/docs/coordination-contract-v1.md docs/coordination-contract-v1.md; pwd"
         ],
-        "tellUser": "I wrote the brief for `orbits` and did not send it. I left out your `uds:/tmp/cc-socks/987654.sock` address on purpose: the skill says a peer replies automatically to whoever messaged it, so the brief doesn't need a return address. The contract doc isn't at `docs/` in the working directory. It's at `peer-sessions/docs/coordination-contract-v1.md`, so the brief gives the peer that absolute path, since its own working directory is different. The brief also asks for a fixed reply format and tells the peer to only read and summarise, without editing anything.",
-        "brief": "Please read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-362f8ce9-e9df-4997-86af-13936442f98c/target/peer-sessions/docs/coordination-contract-v1.md and summarise it.\n\nCover: what the contract is for, the receipt/JSON inventory fields and what each one means, the failure states (denied / unknown / failed / blocked) and what the caller should do for each, how --correlate IDs are echoed back, and any versioning or compatibility rules.\n\nScope: read and summarise only. Do not edit, create or delete any files, and do not run the spawn or teardown scripts.\n\nWhen you're done, reply to me with your summary in this format:\norbits done: <summary as 5-10 bullet points, then one line listing anything in the doc that is unclear or contradictory, or 'none'>"
+        "tellUser": "I wrote the brief for `orbits` but did not send it. It leaves out your `uds:/tmp/cc-socks/987654.sock` address on purpose: the skill says a peer replies to whoever messaged it, so a brief needs no return address. The contract document is in the skill directory, not the working directory, so the brief gives its absolute path in case `orbits` runs from a different directory. The brief also tells `orbits` to only read and write the summary, and sets a fixed reply format (`orbits done: ...`). When you send it, the first send to the bare name `orbits` will bounce with a `[ref]`, which is normal. Re-send it to `orbits [ref]`, then wait for the reply to arrive as a new turn.",
+        "brief": "Please read and summarise this file: /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-17666f60-bd30-4f7a-9155-27283fd37ea8/target/peer-sessions/docs/coordination-contract-v1.md\n\nScope: only read this file and write the summary. Do not edit, create or delete any files, do not run spawn or teardown scripts, and do not message other sessions.\n\nIn the summary, cover:\n- what the contract is for and who produces or consumes it\n- the receipt/JSON format: its top-level fields and the fields for each session\n- status values and exit codes, and what each one means\n- how correlation IDs (--correlate) are carried through\n- any versioning or compatibility rules\n\nKeep it under about 300 words. When you're done, reply to me with your summary. Use this format:\norbits done: <summary>\nIf you can't read the file, reply instead with:\norbits blocked: <reason>"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":38399,\"outputTokens\":1092,\"costUsd\":\"0.0769666\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":38434,\"outputTokens\":1143,\"costUsd\":\"0.0781886\"}\n"
     },
     "artifacts": {}
   }

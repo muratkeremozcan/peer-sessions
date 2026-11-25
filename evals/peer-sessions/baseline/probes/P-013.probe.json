@@ -6,9 +6,9 @@
   "probeClass": "defect",
   "behaviorId": "B-003",
   "systemId": "peer-sessions",
-  "implementationDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
-  "artifactDigest": "sha256:ddce5ce7e5921406f87fa67655bd58fcdcc9eb20ad61dbecbd4c2226c3aec766",
-  "commitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
+  "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "artifactDigest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571",
+  "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
   "rationale": "[negative] M-010: The agent launches Claude peers in place of the Codex peers asked for.",
   "qualification": {
     "route": "controlled-mutation",
@@ -18,20 +18,20 @@
       "storage": "public",
       "path": "peer-sessions/SKILL.md",
       "privateRef": null,
-      "digest": "sha256:ddce5ce7e5921406f87fa67655bd58fcdcc9eb20ad61dbecbd4c2226c3aec766"
+      "digest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571"
     },
     "expectedObservableFailure": "The agent launches Claude peers in place of the Codex peers asked for.",
     "baselinePassEvidence": {
       "storage": "public",
-      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-013/baseline-pass.json",
+      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-013/baseline-pass.json",
       "privateRef": null,
-      "digest": "sha256:75d7b71c8046b7a26085b87a20d0fc604cfa1e30cfbbb016796a2c5bf0e0299e"
+      "digest": "sha256:5c8c4a981b6bfffe31a3dfa3ff9871b3911af583005c525139770e3e030a4514"
     },
     "mutatedFailEvidence": {
       "storage": "public",
-      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-013/mutated-fail.json",
+      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-013/mutated-fail.json",
       "privateRef": null,
-      "digest": "sha256:d23dcb80dc94ee18d1d27c9628da2528cbd75e8e7ac2f4e9f20ddd9c0e2b8871"
+      "digest": "sha256:180eb6aae2bfbc195b24580de02c1c0347cdcdff49a9fc83441f6fcff71df555"
     },
     "rollbackVerified": true
   },
@@ -45,9 +45,9 @@
       "oracleEvidence": [
         {
           "storage": "public",
-          "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-013/mutated-fail.json",
+          "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-013/mutated-fail.json",
           "privateRef": null,
-          "digest": "sha256:d23dcb80dc94ee18d1d27c9628da2528cbd75e8e7ac2f4e9f20ddd9c0e2b8871"
+          "digest": "sha256:180eb6aae2bfbc195b24580de02c1c0347cdcdff49a9fc83441f6fcff71df555"
         }
       ],
       "source": "controlled-mutation",
@@ -194,13 +194,27 @@
                       "op": "not",
                       "operands": [
                         {
-                          "op": "regex",
+                          "op": "any",
                           "operands": [
                             {
-                              "pointer": "@/"
+                              "op": "regex",
+                              "operands": [
+                                {
+                                  "pointer": "@/"
+                                }
+                              ],
+                              "pattern": "^[\\s\\S]*--runtime[= ]+claude\\b[\\s\\S]*$"
+                            },
+                            {
+                              "op": "regex",
+                              "operands": [
+                                {
+                                  "pointer": "@/"
+                                }
+                              ],
+                              "pattern": "^(?:[^'\"\\\\]*(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)[\\n;&|]+|)[ \\t]*(?:Bash:)?[ \\t]*(?:(?:command|builtin|exec|sudo)[ \\t]+|)(?:[\\w./~+-]+/|)(?:python3?[ \\t]+|)(?:\"[^\"\\n]*/spawn-fleet\\.py\"|'[^'\\n]*/spawn-fleet\\.py'|[\\w./~+$\\{\\}-]*spawn-fleet\\.py)(?=[ \\t\\n;&|]|$)(?![^\\n;&|]*(?:--runtime|[ \\t]-h(?:[ \\t\\n;&|]|$)|[ \\t]--help\\b))[\\s\\S]*$"
                             }
-                          ],
-                          "pattern": "^[\\s\\S]*--runtime[= ]+claude\\b[\\s\\S]*$"
+                          ]
                         }
                       ]
                     }

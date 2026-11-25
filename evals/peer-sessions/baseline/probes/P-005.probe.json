@@ -6,20 +6,20 @@
   "probeClass": "zero-action",
   "behaviorId": "B-011",
   "systemId": "peer-sessions",
-  "implementationDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
-  "artifactDigest": "sha256:f31af8a13770df72982e3f3830a7393711f15221f8bf30ebb6f58140a190be2d",
-  "commitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
+  "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "artifactDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
   "rationale": "[representative] Clean control for B-011 at step codex-caller.",
   "qualification": {
     "route": "clean-control",
     "baselinePassEvidence": {
       "storage": "public",
-      "path": "runs/20261124T235450135Z-0ae6815c/qualification/P-005/baseline-pass.json",
+      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-005/baseline-pass.json",
       "privateRef": null,
-      "digest": "sha256:ad27cf1881e8e3e748a0e9bedc80353255b71aefa476a74e1d3d98ad35b69228"
+      "digest": "sha256:42035881c3cb0173e0e30b2ab33c661d12fb7dcf1e0286680d893ba14b4c71e1"
     },
-    "revisionCommitDigest": "sha256:f57fd2fad24ce192463a2a66417cacd588516d0721ff643fca30e7fab4a3492c",
-    "noKnownDefectStatement": "No known defect at revision 35e006c."
+    "revisionCommitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
+    "noKnownDefectStatement": "No known defect at revision 56d6149."
   },
   "expectedClean": true,
   "defects": []

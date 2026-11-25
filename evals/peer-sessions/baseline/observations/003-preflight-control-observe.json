@@ -43,12 +43,12 @@
           "Bash: cat peer-sessions/SKILL.md; ls peer-sessions"
         ],
         "teardownRun": false,
-        "tellUser": "Both peers have finished: `orbits done` and `planets done`. I left the fleet running because you didn't ask me to close it. Both sessions keep their context, so a follow-up question costs one message instead of a new launch. While they stay up, they keep two `claude` processes (PIDs 941001 and 941002) and two herdr workspaces (w7 and w8) open. When you want them gone, tell me or run this. Kill the processes first, because closing a workspace alone leaves the sessions running in the background:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8"
+        "tellUser": "Both peers are finished: orbits and planets each replied that their research is done. I haven't closed anything. Both Claude sessions are still running in herdr workspaces w7 and w8. Leaving them up keeps their context, so a follow-up question costs one message instead of a new launch. The cost is two idle processes and two open workspaces. When you want them gone, tell me to tear them down, or run this yourself (stop the processes first, then close the workspaces):\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24167,\"outputTokens\":374,\"costUsd\":\"0.0439108\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24209,\"outputTokens\":354,\"costUsd\":\"0.043768800000000004\"}\n"
     },
     "artifacts": {}
   }
