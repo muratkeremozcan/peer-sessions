@@ -47,22 +47,31 @@ def private_dir(path):
     return path
 
 
+def held_file(name):
+    """A held-out path inside HELD with no symlink, so the sandbox deny list covers it."""
+    path = private_dir(HELD) / name
+    if path.is_symlink() or not path.resolve().is_relative_to(HELD.resolve()):
+        raise ValueError(f"{path} must resolve inside {HELD} with no symlink")
+    return path
+
+
 def source_digest():
     """sha256 over every held-out source file, by relative path."""
     digest = hashlib.sha256()
     for path in sorted(private_dir(HELD).rglob("*")):
-        if path.is_file():
+        if path.is_file() or path.is_symlink():
+            held_file(path.relative_to(HELD))
             digest.update(f"{path.relative_to(HELD).as_posix()}\0{hashlib.sha256(path.read_bytes()).hexdigest()}\n".encode())
     return "sha256:" + digest.hexdigest()
 
 
 def prepare():
     private_dir(STATE)
-    partition = json.loads((HELD / "partition.json").read_text())
+    partition = json.loads(held_file("partition.json").read_text())
     manifest = json.loads((SOURCE / "evaluation.json").read_text())
     if set(partition) & set(manifest):
         raise ValueError("the public evaluation.json must not declare the held-out partition")
-    held_plan = json.loads((HELD / "plan.json").read_text())
+    held_plan = json.loads(held_file("plan.json").read_text())
     step = next(item for item in held_plan["interactionPlan"] if item["stepId"] == "held-brief-address")
     prompt = step["inputBinding"]["stdin"]["prompt"]["literal"]
     address, = re.findall(bc.REPLY_SOCKET, prompt)
@@ -82,8 +91,9 @@ def prepare():
         (folder / "evaluation.json").write_text(json.dumps(manifest, indent=2) + "\n")
         plan_path = folder / partition["partitionPlan"]["heldOutPlan"]
         plan_path.parent.mkdir(parents=True)
-        shutil.copy2(HELD / "plan.json", plan_path)
-        for probe in sorted((HELD / "probes").glob("*.probe.json")):
+        shutil.copy2(held_file("plan.json"), plan_path)
+        for probe in sorted(held_file("probes").glob("*.probe.json")):
+            probe = held_file(probe.relative_to(HELD))
             if (folder / "probes" / probe.name).exists():
                 raise ValueError(f"held-out probe {probe.name} collides with a development probe")
             shutil.copy2(probe, folder / "probes" / probe.name)

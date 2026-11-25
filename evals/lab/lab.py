@@ -201,7 +201,11 @@ def stop(run):
 
 
 def withhold_check(target, cwd):
-    """Read TARGET from CWD inside the run's sandbox: exit 0 only when the read is refused."""
+    """Read TARGET from CWD inside and outside the run's sandbox.
+
+    Exit 0 only when the sandbox refuses the read and the same read outside it
+    succeeds; an unreadable target proves nothing about the sandbox.
+    """
     run = start()
     try:
         probe = "import sys\ntry:\n    open(sys.argv[1], 'rb').read(1)\nexcept PermissionError as e:\n    print('refused:', e); sys.exit(0)\nprint('readable'); sys.exit(1)\n"
@@ -214,7 +218,8 @@ def withhold_check(target, cwd):
         stop(run)
     print(f"lab sandbox: {result.stdout.strip() or result.stderr.strip()}")
     print(f"outside the lab: {unconfined.stdout.strip() or unconfined.stderr.strip()}")
-    return result.returncode
+    # The probe exits 0 on a refused read and 1 on a successful one.
+    return 0 if result.returncode == 0 and unconfined.returncode == 1 else 1
 
 
 def tree_digest(root):

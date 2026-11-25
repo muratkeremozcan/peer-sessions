@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import tempfile
 
@@ -30,6 +31,21 @@ def evaluate(step, check, stdout):
     return result.stdout.strip()
 
 
+def run_group(argv, stdin, cwd, env, timeout=600):
+    """Run the runner in its own process group; a timeout ends the agent it started too."""
+    process = subprocess.Popen(
+        argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        cwd=cwd, env=env, text=True, start_new_session=True,
+    )
+    try:
+        stdout, stderr = process.communicate(stdin, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGKILL)
+        process.communicate()
+        raise
+    return subprocess.CompletedProcess(argv, process.returncode, stdout, stderr)
+
+
 def screen(spec, clean, run, lab_path):
     step = spec["step"]
     with tempfile.TemporaryDirectory(prefix=f"ps-screen-{step}-") as work:
@@ -45,10 +61,7 @@ def screen(spec, clean, run, lab_path):
         for option, value in bc.options(step).items():
             argv.extend([f"--{option}", value])
         env = {"PATH": lab_path, "HOME": os.environ["HOME"], "USER": os.environ.get("USER", "")}
-        result = subprocess.run(
-            argv, input=bc.prompt(spec), cwd=target, env=env,
-            capture_output=True, text=True, timeout=600,
-        )
+        result = run_group(argv, bc.prompt(spec), target, env)
     OUT.mkdir(parents=True, exist_ok=True)
     tag = "clean" if clean else "mutated"
     (OUT / f"{step}.{tag}.{run}.txt").write_text(

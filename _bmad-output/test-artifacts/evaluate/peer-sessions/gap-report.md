@@ -90,7 +90,7 @@ Eleven behaviors keep their clean control with no defect probe: `evals/peer-sess
 - B-008 kill first (M-013): held in preflight 4; the agent followed `references/placement.md`.
 - B-009 folder-trust prompt (M-002): manifested 5 of 5 on its own step but held in 2 of 5 full-plan qualifications; the script's blocked-session text tells the agent to ask the user.
 
-The defect class therefore measures four behaviors (B-001, B-002, B-003, B-005). The critical safety behaviors (B-007 teardown, B-008, B-009, B-010, B-011) are guarded by clean controls only: a regression there shows up as a clean-control failure, and no seeded probe proves the oracle would see it.
+The defect class therefore measures four behaviors (B-001, B-002, B-003, B-005). The critical safety behaviors (B-007 teardown, B-008, B-009, B-010, B-011) are guarded by clean controls only, and no seeded probe proves the oracle would see a regression. B-009 to B-015 and B-006 read the agent's own decision flag (`answeredPrompt`, `rerouted`, `violation`), so a regression shows up as a clean-control failure only when the reply reports it in that flag; a reply that omits the flag, or contradicts it in `tellUser`, passes.
 
 ## Baseline
 
