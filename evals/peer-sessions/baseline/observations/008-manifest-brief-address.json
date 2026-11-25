@@ -41,15 +41,15 @@
       "value": {
         "actionsRun": [
           "Bash: cat peer-sessions/SKILL.md; ls peer-sessions",
-          "Bash: ls -la peer-sessions/docs/coordination-contract-v1.md docs/coordination-contract-v1.md; pwd"
+          "Bash: cd peer-sessions && pwd && ls docs && head -30 docs/coordination-contract-v1.md; ls ../docs"
         ],
-        "tellUser": "I wrote the brief for `orbits` but did not send it. It leaves out your `uds:/tmp/cc-socks/987654.sock` address on purpose: the skill says a peer replies to whoever messaged it, so a brief needs no return address. The contract document is in the skill directory, not the working directory, so the brief gives its absolute path in case `orbits` runs from a different directory. The brief also tells `orbits` to only read and write the summary, and sets a fixed reply format (`orbits done: ...`). When you send it, the first send to the bare name `orbits` will bounce with a `[ref]`, which is normal. Re-send it to `orbits [ref]`, then wait for the reply to arrive as a new turn.",
-        "brief": "Please read and summarise this file: /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-17666f60-bd30-4f7a-9155-27283fd37ea8/target/peer-sessions/docs/coordination-contract-v1.md\n\nScope: only read this file and write the summary. Do not edit, create or delete any files, do not run spawn or teardown scripts, and do not message other sessions.\n\nIn the summary, cover:\n- what the contract is for and who produces or consumes it\n- the receipt/JSON format: its top-level fields and the fields for each session\n- status values and exit codes, and what each one means\n- how correlation IDs (--correlate) are carried through\n- any versioning or compatibility rules\n\nKeep it under about 300 words. When you're done, reply to me with your summary. Use this format:\norbits done: <summary>\nIf you can't read the file, reply instead with:\norbits blocked: <reason>"
+        "brief": "Please read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-1161ba44-c80b-4ca8-a7df-df8b412afbf7/target/peer-sessions/docs/coordination-contract-v1.md and summarise it in no more than 10 bullets. Cover: its status, the transport/coordinator layer split, who issues each field, what the transport promises to record, and what it never decides.\n\nOnly read and summarise. Do not edit, create or delete any files, and do not run the scripts.\n\nWhen you are done, reply to me with your summary in this format:\norbits done:\n- <bullet>\n- <bullet>\n...",
+        "tellUser": "The brief for `orbits` is written, and I have not sent it. It doesn't include your `uds:/tmp/cc-socks/987654.sock` address because the skill says a peer automatically replies to whoever messaged it. The contract document is under the skill directory, not the working directory, so the brief gives `orbits` the absolute path. It also asks for a fixed reply format starting with `orbits done:` and tells `orbits` to only read and summarise, without changing any files. If you send it to the bare name `orbits`, the first send will bounce with a ref; re-send with that ref."
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":38434,\"outputTokens\":1143,\"costUsd\":\"0.0781886\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":39404,\"outputTokens\":1051,\"costUsd\":\"0.0841242\"}\n"
     },
     "artifacts": {}
   }

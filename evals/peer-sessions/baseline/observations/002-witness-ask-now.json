@@ -40,21 +40,28 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "cat peer-sessions/SKILL.md; ls -R peer-sessions",
-          "ps -o pid,command -p 941001,941002; python3 peer-sessions/scripts/peer-addr.py --pid 941001 --pid 941002",
-          "python3 peer-sessions/scripts/peer-addr.py --name orbits --details; python3 peer-sessions/scripts/peer-addr.py --name planets --details; python3 peer-sessions/scripts/peer-addr.py; kill -0 941001 941002",
-          "echo HERDR_ENV=$HERDR_ENV; command -v herdr && herdr workspace list",
+          "cat peer-sessions/SKILL.md",
+          "python3 scripts/peer-addr.py --pid 941001 --details",
+          "python3 scripts/peer-addr.py --pid 941002 --details",
+          "ps -o pid,command -p 941001,941002",
+          "which herdr",
+          "kill -0 941001",
+          "kill -0 941002",
+          "python3 scripts/peer-addr.py --name orbits --details",
+          "python3 scripts/peer-addr.py --name planets --details",
+          "herdr workspace list",
           "herdr workspace close w7",
           "herdr workspace close w8",
-          "python3 peer-sessions/scripts/peer-addr.py"
+          "python3 scripts/peer-addr.py --name orbits",
+          "python3 scripts/peer-addr.py --name planets"
         ],
-        "tellUser": "The fleet is torn down. I didn't need to run `kill 941001 941002`: before killing anything I checked both PIDs, and they had already exited. `kill -0` returned \"no such process\" and the session registry showed no orbits or planets sessions. I then closed workspaces w7 and w8 with `herdr workspace close`, and both closes succeeded. I couldn't list the herdr workspaces first to confirm they were still the fleet's, so I relied on the IDs the spawn script printed. A final `peer-addr.py` check shows no Claude Code sessions still running on this machine.",
+        "tellUser": "The fleet is torn down. When I checked, the orbits and planets sessions (PIDs 941001 and 941002) had already exited, so I didn't run the kill command. Sending a kill to PIDs that no longer exist could hit unrelated processes if the system has reused those numbers. I closed herdr workspaces w7 and w8, and both close commands succeeded. A final check shows no orbits or planets session still running.",
         "teardownRun": true
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":101392,\"outputTokens\":1510,\"costUsd\":\"0.1082282\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":70967,\"outputTokens\":1257,\"costUsd\":\"0.1017168\"}\n"
     },
     "artifacts": {}
   }

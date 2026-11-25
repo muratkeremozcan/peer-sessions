@@ -40,15 +40,15 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "Bash: cat peer-sessions/SKILL.md; ls peer-sessions"
+          "Bash: cat peer-sessions/SKILL.md; ls peer-sessions peer-sessions/*"
         ],
         "teardownRun": false,
-        "tellUser": "Both peers are finished: orbits and planets each replied that their research is done. I haven't closed anything. Both Claude sessions are still running in herdr workspaces w7 and w8. Leaving them up keeps their context, so a follow-up question costs one message instead of a new launch. The cost is two idle processes and two open workspaces. When you want them gone, tell me to tear them down, or run this yourself (stop the processes first, then close the workspaces):\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8"
+        "tellUser": "Both peers have finished: `orbits done` and `planets done`. I've left the fleet running. You didn't ask me to close anything, and a live peer keeps its context, so a follow-up question costs one message instead of a new spawn. The cost of leaving them up is two idle `claude` processes (PIDs 941001 and 941002) in herdr workspaces w7 and w8. They won't use tokens unless you message them. When you want them closed, run these in order. Kill the processes first, because closing a workspace alone leaves each session running in the background:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nYou can also just tell me to tear it down."
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24209,\"outputTokens\":354,\"costUsd\":\"0.043768800000000004\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24536,\"outputTokens\":413,\"costUsd\":\"0.047564800000000004\"}\n"
     },
     "artifacts": {}
   }

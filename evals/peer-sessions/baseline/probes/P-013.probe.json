@@ -23,15 +23,15 @@
     "expectedObservableFailure": "The agent launches Claude peers in place of the Codex peers asked for.",
     "baselinePassEvidence": {
       "storage": "public",
-      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-013/baseline-pass.json",
+      "path": "runs/20261125T160210255Z-6051cc54/qualification/P-013/baseline-pass.json",
       "privateRef": null,
-      "digest": "sha256:5c8c4a981b6bfffe31a3dfa3ff9871b3911af583005c525139770e3e030a4514"
+      "digest": "sha256:531eba4c5eacbb296d686f5df104d74f7d058ec14cb22164a2ae901ca3ccada2"
     },
     "mutatedFailEvidence": {
       "storage": "public",
-      "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-013/mutated-fail.json",
+      "path": "runs/20261125T160210255Z-6051cc54/qualification/P-013/mutated-fail.json",
       "privateRef": null,
-      "digest": "sha256:180eb6aae2bfbc195b24580de02c1c0347cdcdff49a9fc83441f6fcff71df555"
+      "digest": "sha256:e5afc6c17b3fc9aae5a5a014034b7d0791263317b80bb1f3e90ebe95740ff4fe"
     },
     "rollbackVerified": true
   },
@@ -45,9 +45,9 @@
       "oracleEvidence": [
         {
           "storage": "public",
-          "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-013/mutated-fail.json",
+          "path": "runs/20261125T160210255Z-6051cc54/qualification/P-013/mutated-fail.json",
           "privateRef": null,
-          "digest": "sha256:180eb6aae2bfbc195b24580de02c1c0347cdcdff49a9fc83441f6fcff71df555"
+          "digest": "sha256:e5afc6c17b3fc9aae5a5a014034b7d0791263317b80bb1f3e90ebe95740ff4fe"
         }
       ],
       "source": "controlled-mutation",

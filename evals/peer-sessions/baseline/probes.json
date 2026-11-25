@@ -24,15 +24,15 @@
       "expectedObservableFailure": "The agent names the session worker-1 instead of the branch name.",
       "baselinePassEvidence": {
         "storage": "public",
-        "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-009/baseline-pass.json",
+        "path": "runs/20261125T160210255Z-6051cc54/qualification/P-009/baseline-pass.json",
         "privateRef": null,
-        "digest": "sha256:0996c19e03625cd73e834a60fd2bc4bc80430d6464d440d230fbff960b36fc47"
+        "digest": "sha256:f798dab644b5e590b60f47489b8ef76ab9ca1a4c246ba910917fe0caa4d967bc"
       },
       "mutatedFailEvidence": {
         "storage": "public",
-        "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-009/mutated-fail.json",
+        "path": "runs/20261125T160210255Z-6051cc54/qualification/P-009/mutated-fail.json",
         "privateRef": null,
-        "digest": "sha256:829f03ac7956a71b898367b5b7d4ffd2647e4e811a16d5bc6a22c98b4004943b"
+        "digest": "sha256:60cb89c6a950fbf8e46f8dd3ff16d838ce813bba420f0842b122ba8c1d2e4cf9"
       },
       "rollbackVerified": true
     },
@@ -46,9 +46,9 @@
         "oracleEvidence": [
           {
             "storage": "public",
-            "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-009/mutated-fail.json",
+            "path": "runs/20261125T160210255Z-6051cc54/qualification/P-009/mutated-fail.json",
             "privateRef": null,
-            "digest": "sha256:829f03ac7956a71b898367b5b7d4ffd2647e4e811a16d5bc6a22c98b4004943b"
+            "digest": "sha256:60cb89c6a950fbf8e46f8dd3ff16d838ce813bba420f0842b122ba8c1d2e4cf9"
           }
         ],
         "source": "controlled-mutation",
@@ -154,15 +154,15 @@
       "expectedObservableFailure": "The agent picks a placement other than split for one short watched peer.",
       "baselinePassEvidence": {
         "storage": "public",
-        "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-011/baseline-pass.json",
+        "path": "runs/20261125T160210255Z-6051cc54/qualification/P-011/baseline-pass.json",
         "privateRef": null,
-        "digest": "sha256:780900b74cf18de7a7d3a95a22d7ec11784b6248cb288c2c69ef618d704b6162"
+        "digest": "sha256:4488ef41a036d657a1533113fb96d146aa0384cab897727f26ffd89c1066aefc"
       },
       "mutatedFailEvidence": {
         "storage": "public",
-        "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-011/mutated-fail.json",
+        "path": "runs/20261125T160210255Z-6051cc54/qualification/P-011/mutated-fail.json",
         "privateRef": null,
-        "digest": "sha256:7c832ea6b24b4e8cffa8bc180285c7c2af8a7c6c769bbede3a9396e889bd4253"
+        "digest": "sha256:c729b49ff524879246214a4d1748ac47d486d7fbb268b9b14cb7caa0ae1f0265"
       },
       "rollbackVerified": true
     },
@@ -176,9 +176,9 @@
         "oracleEvidence": [
           {
             "storage": "public",
-            "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-011/mutated-fail.json",
+            "path": "runs/20261125T160210255Z-6051cc54/qualification/P-011/mutated-fail.json",
             "privateRef": null,
-            "digest": "sha256:7c832ea6b24b4e8cffa8bc180285c7c2af8a7c6c769bbede3a9396e889bd4253"
+            "digest": "sha256:c729b49ff524879246214a4d1748ac47d486d7fbb268b9b14cb7caa0ae1f0265"
           }
         ],
         "source": "controlled-mutation",
@@ -320,15 +320,15 @@
       "expectedObservableFailure": "The agent launches Claude peers in place of the Codex peers asked for.",
       "baselinePassEvidence": {
         "storage": "public",
-        "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-013/baseline-pass.json",
+        "path": "runs/20261125T160210255Z-6051cc54/qualification/P-013/baseline-pass.json",
         "privateRef": null,
-        "digest": "sha256:5c8c4a981b6bfffe31a3dfa3ff9871b3911af583005c525139770e3e030a4514"
+        "digest": "sha256:531eba4c5eacbb296d686f5df104d74f7d058ec14cb22164a2ae901ca3ccada2"
       },
       "mutatedFailEvidence": {
         "storage": "public",
-        "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-013/mutated-fail.json",
+        "path": "runs/20261125T160210255Z-6051cc54/qualification/P-013/mutated-fail.json",
         "privateRef": null,
-        "digest": "sha256:180eb6aae2bfbc195b24580de02c1c0347cdcdff49a9fc83441f6fcff71df555"
+        "digest": "sha256:e5afc6c17b3fc9aae5a5a014034b7d0791263317b80bb1f3e90ebe95740ff4fe"
       },
       "rollbackVerified": true
     },
@@ -342,9 +342,9 @@
         "oracleEvidence": [
           {
             "storage": "public",
-            "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-013/mutated-fail.json",
+            "path": "runs/20261125T160210255Z-6051cc54/qualification/P-013/mutated-fail.json",
             "privateRef": null,
-            "digest": "sha256:180eb6aae2bfbc195b24580de02c1c0347cdcdff49a9fc83441f6fcff71df555"
+            "digest": "sha256:e5afc6c17b3fc9aae5a5a014034b7d0791263317b80bb1f3e90ebe95740ff4fe"
           }
         ],
         "source": "controlled-mutation",
@@ -550,15 +550,15 @@
       "expectedObservableFailure": "The brief ends without a reply address for the caller.",
       "baselinePassEvidence": {
         "storage": "public",
-        "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-016/baseline-pass.json",
+        "path": "runs/20261125T160210255Z-6051cc54/qualification/P-016/baseline-pass.json",
         "privateRef": null,
-        "digest": "sha256:76d5e1e649ed4b8f1d18235829d61f39c142ba363e047663c9f4d4189ff54a00"
+        "digest": "sha256:cc6b3dd06cb928acca78a16a1d7b15457400329d1a23c5c213e1a7a80cc4b9a8"
       },
       "mutatedFailEvidence": {
         "storage": "public",
-        "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-016/mutated-fail.json",
+        "path": "runs/20261125T160210255Z-6051cc54/qualification/P-016/mutated-fail.json",
         "privateRef": null,
-        "digest": "sha256:89e8f8cc88cc10c788ce2daabe4558c011108ad7de9d892f80c2ec4c633696cb"
+        "digest": "sha256:b61a7a0e9ac0f598e611ab787894dd54f9d7837d22673f09cd8bca3f8b563213"
       },
       "rollbackVerified": true
     },
@@ -572,9 +572,9 @@
         "oracleEvidence": [
           {
             "storage": "public",
-            "path": "runs/20261125T130012203Z-49c3dc05/qualification/P-016/mutated-fail.json",
+            "path": "runs/20261125T160210255Z-6051cc54/qualification/P-016/mutated-fail.json",
             "privateRef": null,
-            "digest": "sha256:89e8f8cc88cc10c788ce2daabe4558c011108ad7de9d892f80c2ec4c633696cb"
+            "digest": "sha256:b61a7a0e9ac0f598e611ab787894dd54f9d7837d22673f09cd8bca3f8b563213"
           }
         ],
         "source": "controlled-mutation",

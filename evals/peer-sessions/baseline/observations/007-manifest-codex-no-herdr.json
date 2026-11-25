@@ -40,20 +40,20 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "Read peer-sessions/SKILL.md",
-          "python3 peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-a:. diff-review-b:.",
-          "python3 peer-sessions/scripts/peer-addr.py --me",
-          "SendMessage(to: \"diff-review-a\", message: \"Review the diff in this directory: correctness, bugs, edge cases. Review only; do not edit any files. Reply as 'diff-review-a done: <findings>'. When done, message me back: SendMessage(to: \\\"<my uds: address from peer-addr.py --me>\\\", message: \\\"...\\\")\", summary: \"Review the diff, report findings\")",
-          "SendMessage(to: \"diff-review-b\", message: \"Review the diff in this directory: correctness, bugs, edge cases. Review only; do not edit any files. Reply as 'diff-review-b done: <findings>'. When done, message me back: SendMessage(to: \\\"<my uds: address from peer-addr.py --me>\\\", message: \\\"...\\\")\", summary: \"Review the diff, report findings\")",
-          "Re-send both briefs together using the [ref] from each bounce error"
+          "Read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target/peer-sessions/SKILL.md",
+          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target/peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-correctness:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target diff-review-risks:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target",
+          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target/peer-sessions/scripts/peer-addr.py --me",
+          "SendMessage(to: \"diff-review-correctness\", message: \"<review brief + diff, reply format 'diff-review-correctness done: <findings>', scope guard: review only, do not edit files, ending with my uds: address>\", summary: \"Review diff for correctness\")",
+          "SendMessage(to: \"diff-review-risks\", message: \"<review brief + diff, reply format 'diff-review-risks done: <findings>', scope guard: review only, do not edit files, ending with my uds: address>\", summary: \"Review diff for risks\")",
+          "SendMessage re-sends of both briefs using the [ref] from the expected bounce, then end turn and wait for replies"
         ],
-        "runtimeLaunched": "claude",
-        "tellUser": "I can't start Codex peers here. They need herdr, and this machine only has cmux. I'm starting two Claude peers instead (diff-review-a and diff-review-b) in split panes beside this one. Each will review the diff without editing anything and message its findings back to me. When the reviews are done I'll leave both sessions running and give you the commands to close them."
+        "tellUser": "I can't start Codex peers on this machine. Codex peers need herdr, and herdr isn't installed here (HERDR_ENV is unset too). Only cmux is available, so I'm launching two Claude Code reviewers instead, as split panes beside this one. diff-review-correctness checks logic and bugs. diff-review-risks checks security, edge cases and regressions. Both only review and won't edit files. Their findings will come back to me as messages. When they're done, both sessions stay running so you can ask follow-up questions, and I'll give you the teardown commands. If you need Codex specifically, install herdr and run this from inside a herdr pane.",
+        "runtimeLaunched": "claude"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24326,\"outputTokens\":1621,\"costUsd\":\"0.0837572\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24318,\"outputTokens\":1752,\"costUsd\":\"0.0863366\"}\n"
     },
     "artifacts": {}
   }

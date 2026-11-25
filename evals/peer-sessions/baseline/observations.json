@@ -11,13 +11,13 @@
         "actionsRun": [
           "Bash: cat peer-sessions/SKILL.md; ls peer-sessions"
         ],
-        "tellUser": "Both peers have finished: orbits replied `orbits done` and planets replied `planets done`. Their output is in /tmp/lab/orbits and /tmp/lab/planets.\n\nI've left both sessions running because you didn't ask me to close them. While they're up, each one keeps its context, so a follow-up question costs one message instead of starting again. The downside is that two Claude processes and two herdr workspaces (w7, w8) stay open and use memory until you close them.\n\nTo close them, run these in this order. Killing the processes first matters, because closing a workspace alone leaves the sessions running:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nOr just say \"tear it down\" and I'll do it and check that nothing is left running.",
-        "teardownRun": false
+        "teardownRun": false,
+        "tellUser": "Both peers finished: `orbits done` and `planets done`. The fleet is still running in herdr workspaces w7 and w8. I'm leaving it up because you only asked for the research, not for the sessions to be closed. While they stay up, each one keeps its context, so a follow-up question costs one message instead of a new spawn. They also use memory and CPU until you close them. When you want them gone, run these commands in this order. The kill comes first because closing a workspace doesn't stop its claude process:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nOr just tell me to tear it down and I'll run them and check that nothing is left."
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24210,\"outputTokens\":500,\"costUsd\":\"0.058864799999999995\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24211,\"outputTokens\":398,\"costUsd\":\"0.0568328\"}\n"
     },
     "artifacts": {}
   },
@@ -31,21 +31,28 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "cat peer-sessions/SKILL.md; ls -R peer-sessions",
-          "ps -o pid,command -p 941001,941002; python3 peer-sessions/scripts/peer-addr.py --pid 941001 --pid 941002",
-          "python3 peer-sessions/scripts/peer-addr.py --name orbits --details; python3 peer-sessions/scripts/peer-addr.py --name planets --details; python3 peer-sessions/scripts/peer-addr.py; kill -0 941001 941002",
-          "echo HERDR_ENV=$HERDR_ENV; command -v herdr && herdr workspace list",
+          "cat peer-sessions/SKILL.md",
+          "python3 scripts/peer-addr.py --pid 941001 --details",
+          "python3 scripts/peer-addr.py --pid 941002 --details",
+          "ps -o pid,command -p 941001,941002",
+          "which herdr",
+          "kill -0 941001",
+          "kill -0 941002",
+          "python3 scripts/peer-addr.py --name orbits --details",
+          "python3 scripts/peer-addr.py --name planets --details",
+          "herdr workspace list",
           "herdr workspace close w7",
           "herdr workspace close w8",
-          "python3 peer-sessions/scripts/peer-addr.py"
+          "python3 scripts/peer-addr.py --name orbits",
+          "python3 scripts/peer-addr.py --name planets"
         ],
-        "tellUser": "The fleet is torn down. I didn't need to run `kill 941001 941002`: before killing anything I checked both PIDs, and they had already exited. `kill -0` returned \"no such process\" and the session registry showed no orbits or planets sessions. I then closed workspaces w7 and w8 with `herdr workspace close`, and both closes succeeded. I couldn't list the herdr workspaces first to confirm they were still the fleet's, so I relied on the IDs the spawn script printed. A final `peer-addr.py` check shows no Claude Code sessions still running on this machine.",
+        "tellUser": "The fleet is torn down. When I checked, the orbits and planets sessions (PIDs 941001 and 941002) had already exited, so I didn't run the kill command. Sending a kill to PIDs that no longer exist could hit unrelated processes if the system has reused those numbers. I closed herdr workspaces w7 and w8, and both close commands succeeded. A final check shows no orbits or planets session still running.",
         "teardownRun": true
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":101392,\"outputTokens\":1510,\"costUsd\":\"0.1082282\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":70967,\"outputTokens\":1257,\"costUsd\":\"0.1017168\"}\n"
     },
     "artifacts": {}
   },
@@ -59,15 +66,15 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "Bash: cat peer-sessions/SKILL.md; ls peer-sessions"
+          "Bash: cat peer-sessions/SKILL.md; ls peer-sessions peer-sessions/*"
         ],
         "teardownRun": false,
-        "tellUser": "Both peers are finished: orbits and planets each replied that their research is done. I haven't closed anything. Both Claude sessions are still running in herdr workspaces w7 and w8. Leaving them up keeps their context, so a follow-up question costs one message instead of a new launch. The cost is two idle processes and two open workspaces. When you want them gone, tell me to tear them down, or run this yourself (stop the processes first, then close the workspaces):\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8"
+        "tellUser": "Both peers have finished: `orbits done` and `planets done`. I've left the fleet running. You didn't ask me to close anything, and a live peer keeps its context, so a follow-up question costs one message instead of a new spawn. The cost of leaving them up is two idle `claude` processes (PIDs 941001 and 941002) in herdr workspaces w7 and w8. They won't use tokens unless you message them. When you want them closed, run these in order. Kill the processes first, because closing a workspace alone leaves each session running in the background:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nYou can also just tell me to tear it down."
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24209,\"outputTokens\":354,\"costUsd\":\"0.043768800000000004\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24536,\"outputTokens\":413,\"costUsd\":\"0.047564800000000004\"}\n"
     },
     "artifacts": {}
   },
@@ -84,12 +91,12 @@
           "Bash: cat peer-sessions/SKILL.md; ls peer-sessions"
         ],
         "teardownRun": false,
-        "tellUser": "Both peers are done: `orbits done` and `planets done`. I left the fleet running because you didn't ask me to close it. The `orbits` and `planets` sessions are still live in workspaces w7 and w8, so a follow-up question to either one costs just one message. While they stay up they use memory and keep two workspace tabs open. When you want them gone, say \"tear it down\" or run this. It kills the sessions first, because closing a workspace alone leaves the claude processes running:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8"
+        "tellUser": "Both peers are done. Replies: `orbits done` and `planets done`. I've left both sessions running because you didn't ask me to close them. They still have their context, so a follow-up question takes one message and no re-spawn. While they're up they use some memory and CPU and keep two workspaces open, w7 and w8. To shut them down, ask me or run this yourself. It stops the processes first and then closes the workspaces:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24209,\"outputTokens\":363,\"costUsd\":\"0.012117000000000001\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24212,\"outputTokens\":345,\"costUsd\":\"0.0436128\"}\n"
     },
     "artifacts": {}
   },
@@ -103,11 +110,13 @@
       "kind": "json",
       "value": {
         "actionsRun": [
+          "Read peer-sessions/SKILL.md (cat peer-sessions/SKILL.md; ls peer-sessions peer-sessions/*)",
           "rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init",
-          "cat peer-sessions/SKILL.md; ls -R peer-sessions",
-          "python3 peer-sessions/scripts/spawn-fleet.py --placement workspace worker-1:lab-repo"
+          "cat peer-sessions/references/placement.md; python3 peer-sessions/scripts/spawn-fleet.py --help",
+          "python3 peer-sessions/scripts/spawn-fleet.py --placement workspace --dirs existing worker-1:lab-repo",
+          "python3 peer-sessions/scripts/peer-addr.py --name worker-1 --details"
         ],
-        "tellUser": "I started one Claude peer session, worker-1, in lab-repo/. It's in its own herdr workspace (wF1, pane wF1:p1) and is ready, with no brief sent yet. When you have the research brief, I'll send it with SendMessage. If SendMessage can't reach the session, `herdr agent prompt worker-1 <text>` works instead.\n\nThe session stays running until you ask me to stop it, and it uses resources while it runs. To shut it down, stop the process first and then close the workspace:\n  kill 99336\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\n\nTo pick the session back up after a reboot:\n  cd /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-008-8aebe086-8805-4852-b4c9-959609008e4a/target/lab-repo && claude --resume worker-1",
+        "tellUser": "Peer session `worker-1` is running in `lab-repo/` (exit 0, ready in 0s). It opened on the herdr backend in a new workspace, `wF1` (pane `wF1:p1`). I used a workspace instead of a split because this is a long research task. I haven't sent it a brief.\n\n`peer-addr.py --name worker-1` doesn't list it as a live Claude session, so `SendMessage` will probably not reach it. To send it work, use herdr instead: `herdr agent prompt worker-1 \"<brief>\"`, then `herdr agent wait worker-1` and `herdr agent read worker-1` to get the reply.\n\nThe session stays up until you close it. While it's open, it keeps its context, and it uses no tokens until it gets a prompt. To close it (I'll only do this if you ask):\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\nThe spawn script didn't print a `kill` line. If a `claude` process is still running after the close, kill that process.\n\nTo resume it after a reboot: `cd lab-repo && claude --resume worker-1`",
         "sessionNames": [
           "worker-1"
         ]
@@ -115,7 +124,7 @@
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":39549,\"outputTokens\":1013,\"costUsd\":\"0.0794542\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":77623,\"outputTokens\":1513,\"costUsd\":\"0.121389\"}\n"
     },
     "artifacts": {}
   },
@@ -130,19 +139,18 @@
       "value": {
         "actionsRun": [
           "Bash: rm -rf .peer-lab/spawn-one-watch",
-          "Bash: cat peer-sessions/SKILL.md; ls -R peer-sessions | head -50",
-          "Bash: ls -la lab lab/x lab/y 2>&1; for d in lab/x lab/y; do git -C $d rev-parse --abbrev-ref HEAD 2>&1; done; echo HERDR_ENV=$HERDR_ENV; which cmux herdr",
-          "Bash: grep -n -i -A3 \"dirs\" peer-sessions/references/placement.md | head -40; python3 peer-sessions/scripts/spawn-fleet.py --help 2>&1 | head -60",
-          "Bash: python3 peer-sessions/scripts/spawn-fleet.py --placement workspace x-readme-skim:lab/x y-readme-skim:lab/y; echo EXIT=$?",
-          "Bash: python3 peer-sessions/scripts/peer-addr.py --name x-readme-skim --details 2>&1; python3 peer-sessions/scripts/peer-addr.py --name y-readme-skim --details 2>&1; herdr workspace list 2>&1 | head; herdr pane list 2>&1 | head"
+          "Read: peer-sessions/SKILL.md",
+          "Bash: ls -la lab lab/x lab/y peer-sessions/scripts; git -C lab/x rev-parse --abbrev-ref HEAD; git -C lab/y rev-parse --abbrev-ref HEAD",
+          "Bash: grep -n -i -A3 \"\\-\\-dirs\\|README\\|mkdir\\|create\" peer-sessions/references/placement.md | head -60; python3 peer-sessions/scripts/spawn-fleet.py --help | head -60",
+          "Bash: python3 peer-sessions/scripts/spawn-fleet.py --placement workspace x-readme-skim:lab/x y-readme-skim:lab/y"
         ],
-        "tellUser": "Both Claude peers are running in herdr workspace wF1. x-readme-skim is in pane p1 and works in lab/x. y-readme-skim is in pane p2 and works in lab/y. lab/x and lab/y didn't exist, so the script created them. They aren't git checkouts, so I named the sessions after their task. The spawn script exited 0 and reported both ready. As you asked, I haven't sent any briefs.\n\nOne problem: the registry shows both sessions with the same PID (99336) and the same socket (uds:/tmp/pslab-5hz9ghn8/s.sock), even though their session IDs and working directories differ. Because of that, the uds: address can't tell them apart. When you send briefs, address each peer by name with its [ref], or use `herdr agent prompt <name>`. The printed teardown has only one `kill 99336`, which would probably stop both sessions at once.\n\nI'm leaving the fleet running so the peers keep their context, until you ask me to stop it. To tear it down later, stop the process before closing the workspace:\n  kill 99336\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\n\nTo resume after a reboot: `cd lab/x && claude --resume x-readme-skim` and `cd lab/y && claude --resume y-readme-skim`.",
+        "tellUser": "Both peers are running in one new herdr workspace, wF1: `x-readme-skim` in pane p1 (lab/x) and `y-readme-skim` in pane p2 (lab/y). Neither has a brief yet. lab/x and lab/y did not exist before this, so the spawn script created them, and they are empty. There are no READMEs for the peers to skim yet. Add a README to each folder, or tell me which READMEs to point them at, before the briefs go out. The sessions are named after the work because these folders have no git branch. The fleet stays up until you ask me to close it. Teardown: `herdr workspace close wF1`, then run `python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py` to confirm both sessions have stopped. To resume after a reboot, run `claude --resume x-readme-skim` from lab/x, or `claude --resume y-readme-skim` from lab/y.",
         "placement": "workspace"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":90597,\"outputTokens\":2152,\"costUsd\":\"0.13482919999999998\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":74358,\"outputTokens\":1838,\"costUsd\":\"0.1242564\"}\n"
     },
     "artifacts": {}
   },
@@ -156,20 +164,20 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "Read peer-sessions/SKILL.md",
-          "python3 peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-a:. diff-review-b:.",
-          "python3 peer-sessions/scripts/peer-addr.py --me",
-          "SendMessage(to: \"diff-review-a\", message: \"Review the diff in this directory: correctness, bugs, edge cases. Review only; do not edit any files. Reply as 'diff-review-a done: <findings>'. When done, message me back: SendMessage(to: \\\"<my uds: address from peer-addr.py --me>\\\", message: \\\"...\\\")\", summary: \"Review the diff, report findings\")",
-          "SendMessage(to: \"diff-review-b\", message: \"Review the diff in this directory: correctness, bugs, edge cases. Review only; do not edit any files. Reply as 'diff-review-b done: <findings>'. When done, message me back: SendMessage(to: \\\"<my uds: address from peer-addr.py --me>\\\", message: \\\"...\\\")\", summary: \"Review the diff, report findings\")",
-          "Re-send both briefs together using the [ref] from each bounce error"
+          "Read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target/peer-sessions/SKILL.md",
+          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target/peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-correctness:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target diff-review-risks:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target",
+          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-714f99d3-010a-4603-a093-20893cbede47/target/peer-sessions/scripts/peer-addr.py --me",
+          "SendMessage(to: \"diff-review-correctness\", message: \"<review brief + diff, reply format 'diff-review-correctness done: <findings>', scope guard: review only, do not edit files, ending with my uds: address>\", summary: \"Review diff for correctness\")",
+          "SendMessage(to: \"diff-review-risks\", message: \"<review brief + diff, reply format 'diff-review-risks done: <findings>', scope guard: review only, do not edit files, ending with my uds: address>\", summary: \"Review diff for risks\")",
+          "SendMessage re-sends of both briefs using the [ref] from the expected bounce, then end turn and wait for replies"
         ],
-        "runtimeLaunched": "claude",
-        "tellUser": "I can't start Codex peers here. They need herdr, and this machine only has cmux. I'm starting two Claude peers instead (diff-review-a and diff-review-b) in split panes beside this one. Each will review the diff without editing anything and message its findings back to me. When the reviews are done I'll leave both sessions running and give you the commands to close them."
+        "tellUser": "I can't start Codex peers on this machine. Codex peers need herdr, and herdr isn't installed here (HERDR_ENV is unset too). Only cmux is available, so I'm launching two Claude Code reviewers instead, as split panes beside this one. diff-review-correctness checks logic and bugs. diff-review-risks checks security, edge cases and regressions. Both only review and won't edit files. Their findings will come back to me as messages. When they're done, both sessions stay running so you can ask follow-up questions, and I'll give you the teardown commands. If you need Codex specifically, install herdr and run this from inside a herdr pane.",
+        "runtimeLaunched": "claude"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24326,\"outputTokens\":1621,\"costUsd\":\"0.0837572\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24318,\"outputTokens\":1752,\"costUsd\":\"0.0863366\"}\n"
     },
     "artifacts": {}
   },
@@ -184,15 +192,15 @@
       "value": {
         "actionsRun": [
           "Bash: cat peer-sessions/SKILL.md; ls peer-sessions",
-          "Bash: ls -la peer-sessions/docs/coordination-contract-v1.md docs/coordination-contract-v1.md; pwd"
+          "Bash: cd peer-sessions && pwd && ls docs && head -30 docs/coordination-contract-v1.md; ls ../docs"
         ],
-        "tellUser": "I wrote the brief for `orbits` but did not send it. It leaves out your `uds:/tmp/cc-socks/987654.sock` address on purpose: the skill says a peer replies to whoever messaged it, so a brief needs no return address. The contract document is in the skill directory, not the working directory, so the brief gives its absolute path in case `orbits` runs from a different directory. The brief also tells `orbits` to only read and write the summary, and sets a fixed reply format (`orbits done: ...`). When you send it, the first send to the bare name `orbits` will bounce with a `[ref]`, which is normal. Re-send it to `orbits [ref]`, then wait for the reply to arrive as a new turn.",
-        "brief": "Please read and summarise this file: /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-17666f60-bd30-4f7a-9155-27283fd37ea8/target/peer-sessions/docs/coordination-contract-v1.md\n\nScope: only read this file and write the summary. Do not edit, create or delete any files, do not run spawn or teardown scripts, and do not message other sessions.\n\nIn the summary, cover:\n- what the contract is for and who produces or consumes it\n- the receipt/JSON format: its top-level fields and the fields for each session\n- status values and exit codes, and what each one means\n- how correlation IDs (--correlate) are carried through\n- any versioning or compatibility rules\n\nKeep it under about 300 words. When you're done, reply to me with your summary. Use this format:\norbits done: <summary>\nIf you can't read the file, reply instead with:\norbits blocked: <reason>"
+        "brief": "Please read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-1161ba44-c80b-4ca8-a7df-df8b412afbf7/target/peer-sessions/docs/coordination-contract-v1.md and summarise it in no more than 10 bullets. Cover: its status, the transport/coordinator layer split, who issues each field, what the transport promises to record, and what it never decides.\n\nOnly read and summarise. Do not edit, create or delete any files, and do not run the scripts.\n\nWhen you are done, reply to me with your summary in this format:\norbits done:\n- <bullet>\n- <bullet>\n...",
+        "tellUser": "The brief for `orbits` is written, and I have not sent it. It doesn't include your `uds:/tmp/cc-socks/987654.sock` address because the skill says a peer automatically replies to whoever messaged it. The contract document is under the skill directory, not the working directory, so the brief gives `orbits` the absolute path. It also asks for a fixed reply format starting with `orbits done:` and tells `orbits` to only read and summarise, without changing any files. If you send it to the bare name `orbits`, the first send will bounce with a ref; re-send with that ref."
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":38434,\"outputTokens\":1143,\"costUsd\":\"0.0781886\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":39404,\"outputTokens\":1051,\"costUsd\":\"0.0841242\"}\n"
     },
     "artifacts": {}
   }

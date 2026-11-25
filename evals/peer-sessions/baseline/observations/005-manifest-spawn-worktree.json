@@ -40,11 +40,13 @@
       "kind": "json",
       "value": {
         "actionsRun": [
+          "Read peer-sessions/SKILL.md (cat peer-sessions/SKILL.md; ls peer-sessions peer-sessions/*)",
           "rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init",
-          "cat peer-sessions/SKILL.md; ls -R peer-sessions",
-          "python3 peer-sessions/scripts/spawn-fleet.py --placement workspace worker-1:lab-repo"
+          "cat peer-sessions/references/placement.md; python3 peer-sessions/scripts/spawn-fleet.py --help",
+          "python3 peer-sessions/scripts/spawn-fleet.py --placement workspace --dirs existing worker-1:lab-repo",
+          "python3 peer-sessions/scripts/peer-addr.py --name worker-1 --details"
         ],
-        "tellUser": "I started one Claude peer session, worker-1, in lab-repo/. It's in its own herdr workspace (wF1, pane wF1:p1) and is ready, with no brief sent yet. When you have the research brief, I'll send it with SendMessage. If SendMessage can't reach the session, `herdr agent prompt worker-1 <text>` works instead.\n\nThe session stays running until you ask me to stop it, and it uses resources while it runs. To shut it down, stop the process first and then close the workspace:\n  kill 99336\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\n\nTo pick the session back up after a reboot:\n  cd /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-008-8aebe086-8805-4852-b4c9-959609008e4a/target/lab-repo && claude --resume worker-1",
+        "tellUser": "Peer session `worker-1` is running in `lab-repo/` (exit 0, ready in 0s). It opened on the herdr backend in a new workspace, `wF1` (pane `wF1:p1`). I used a workspace instead of a split because this is a long research task. I haven't sent it a brief.\n\n`peer-addr.py --name worker-1` doesn't list it as a live Claude session, so `SendMessage` will probably not reach it. To send it work, use herdr instead: `herdr agent prompt worker-1 \"<brief>\"`, then `herdr agent wait worker-1` and `herdr agent read worker-1` to get the reply.\n\nThe session stays up until you close it. While it's open, it keeps its context, and it uses no tokens until it gets a prompt. To close it (I'll only do this if you ask):\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\nThe spawn script didn't print a `kill` line. If a `claude` process is still running after the close, kill that process.\n\nTo resume it after a reboot: `cd lab-repo && claude --resume worker-1`",
         "sessionNames": [
           "worker-1"
         ]
@@ -52,7 +54,7 @@
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":39549,\"outputTokens\":1013,\"costUsd\":\"0.0794542\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":77623,\"outputTokens\":1513,\"costUsd\":\"0.121389\"}\n"
     },
     "artifacts": {}
   }
