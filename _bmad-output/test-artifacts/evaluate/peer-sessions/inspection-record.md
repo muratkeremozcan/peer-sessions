@@ -75,17 +75,26 @@ Worker research: test inventory and history drafted by two Haiku workers, verifi
 
 ## CI
 
-- Platform: GitHub Actions. `.github/workflows/tests.yml` is the only workflow: `pull_request` and `push` to `main`, `permissions: contents: read`, jobs `lint` (ruff) and `test` (unittest matrix on ubuntu and macos, Python 3.9 and 3.13). No secret is referenced.
+- Platform: GitHub Actions. `.github/workflows/tests.yml` is the only workflow: `pull_request` and `push` to `main`, `permissions: contents: read`, jobs `lint` (ruff), `test` (unittest on `ubuntu-latest` and `macos-15`, Python 3.9 and 3.13) and `evaluation` (this plan's `pr` tier). No secret is referenced.
+- macOS: from 2026-11-16 every `macos-latest` job was cancelled before its first step, annotated "The job was not acquired by Runner of type hosted even after multiple attempts" with a macOS arm64 capacity notice. The matrix pins `macos-15`.
 - Secrets: `gh secret list -R muratkeremozcan/peer-sessions` is empty, so no event carries a model credential today.
 - Merge flow: `main` has no branch protection or ruleset (API 404 and `[]`); merge, squash and rebase are all allowed; no merge queue. The post-merge event is the push to `main`.
 - Release flow: no tags, no GitHub releases, no release or deploy workflow. The skill ships by cloning into `~/.claude/skills/`.
 - Schedule: no workflow has a `schedule` trigger.
-- Risk profile: highest contract severity is `critical` (B-003, B-007, B-008, B-009, B-010, B-011). One live development run is about 15 steps × 6 arms × 3 trials of Opus 5.5 with command execution, roughly 3 hours; the held-out run adds 5 more arms.
-- Live-tier prerequisites beyond the plan: the run needs `python3 evals/lab/lab.py start` and `python3 evals/lab/lab.py sync-root` before `tea-evaluate`, PATH `/tmp/ps-lab/bin:/usr/bin:/bin:/usr/sbin:/sbin`, the Claude CLI installed, and `CLAUDE_CODE_OAUTH_TOKEN` as a repository secret. Scenario PIDs (941001 and up) sit above macOS `pid_max`; on a Linux runner they are below the default 4194304, so a stray `kill` could hit a runner process with that PID, which an ephemeral runner tolerates.
-- Plan: `evals/peer-sessions/ci/evaluation-ci-plan.json`, `tea-evaluate check` clean. `pr`: check, compile, seal, oracle-agreement, replay. `release`: preflight-live (`--partition development`), twin-run, held-out, strength-comparison. Deleted as inapplicable: api-conformance (no HTTP target), gameability (no gameability probe), judge-calibration (no rubric). No scheduled entries (no schedule trigger anywhere). No `gates` (no publish or deploy job).
-- Deviations from AD-10 defaults: none. Live checks sit on `release`, their default for a target that needs a secret; the scheduled duplicates are deleted with the reason in each release entry.
+- Risk profile: highest contract severity is `critical` (B-003, B-007, B-008, B-009, B-010, B-011). One live development run is 15 steps over 5 arms and 3 trials of Opus 5.5 with command execution, about 80 minutes; the held-out run is 4 mutated arms, about 90 minutes.
+- Live-tier prerequisites beyond the plan: `python3 -B evals/lab/lab.py start` and `python3 -B evals/lab/lab.py sync-root <commit> --root evals/root` before `tea-evaluate`, the lab PATH that `start` prints, the Claude CLI installed, and `CLAUDE_CODE_OAUTH_TOKEN` as a repository secret. The lab wraps `claude` in a Seatbelt profile, so the live tier runs on macOS. Scenario PIDs (941001 and up) sit above macOS `pid_max`.
+- Plan: `evals/peer-sessions/ci/evaluation-ci-plan.json`, `tea-evaluate check` clean. `pr`: check, compile, seal, oracle-agreement, replay. `release`: preflight-live, twin-run, strength-comparison. The held-out partition is not in the plan: the repository folder declares no held-out partition, and held-out runs go through the private view on the author's machine. Deleted as inapplicable: api-conformance (no HTTP target), gameability (no gameability probe), judge-calibration (no rubric). No scheduled entries. No `gates` (no publish or deploy job).
+- Deviations from AD-10 defaults: none. Live checks sit on `release`, their default for a target that needs a secret.
 - `evaluation.json`: `tiers` = `["pr", "release"]`; the registry entry declares `"login": "claude"`, so a CI run hands the target `CLAUDE_CODE_OAUTH_TOKEN` and a local run keeps the Keychain login.
-- Secrets the live tier needs: `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`).
-- Baseline: not accepted. After the gap reruns (development `20261118T220237256Z-7e64dfa5`, held-out `20261119T020859253Z-d8ab3a73`, both floor met, CONCERNS from waivers W-001/W-002 only), `compare --accept` exited 10 because the run is dirty (uncommitted work). Murat chose to stop here on 2026-11-19: open item. To finish: commit the evaluation, run development over that commit, then `npm exec --prefix evals -- tea-evaluate compare --evaluation evals/peer-sessions --accept`. `replay` and `oracle-agreement` on `pr` exit 64 until then.
-- Tier runs: none run, since no baseline exists.
-- Hand-off to `bmad-tea-framework` (CI scope, Edit `.github/workflows/tests.yml`): open item, held because rendering the plan before a baseline turns every pull request red (exit 64). Request to send once the baseline is committed: "CI setup scope, Edit operation on `.github/workflows/tests.yml`, plan `evals/peer-sessions/ci/evaluation-ci-plan.json`. Render `pr` on `pull_request`. Render `release` on `release: published` (the repository has no release flow yet, so create it). The release job must first run `npm ci --prefix evals`, install the Claude CLI, run `python3 evals/lab/lab.py start` and `python3 evals/lab/lab.py sync-root`, and run `tea-evaluate` with PATH `/tmp/ps-lab/bin:/usr/bin:/bin:/usr/sbin:/sbin` and secret `CLAUDE_CODE_OAUTH_TOKEN`."
+- Hand-off: the `pr` tier is rendered as the `evaluation` job (Node 24, `npm ci --prefix evals --ignore-scripts`, `tea-evaluate ci --tier pr`). The `release` tier is not rendered: the repository has no release event and no model secret. Open item.
+
+Pull request checklist (`references/ci.md`):
+
+1. Inputs committed (`contract.json`, `evaluation.json`, `requirements.md`, `probes/`, `mutations/`, `policy/`, `corpus-index.json`, `ci/evaluation-ci-plan.json`); `tea-evaluate check` exits 0. Holds.
+2. Development run over that commit: `20261124T235450135Z-0ae6815c` on `9e121b3`, `dirty: false`. Holds.
+3. Scored by `20261125T011351760Z-cebb6d6e`; no probe reads `unreached`, `abstained` or `oracle-error`. Holds.
+4. Baseline accepted from that run and committed in `4ec0cc4`. Holds.
+5. Held-out frozen and independent: read only through `gap-view.json`; `check` over the view prints no `held-out-drift` warning; run `20261125T022308310Z-c1e0626a` records the frozen `heldOutDigest`. Holds, with the P-023 witness repair disclosed in the authoring log and the gap report.
+6. `tea-evaluate ci --tier pr` exits 0 locally (`20261125T035133274Z-458049d5`). Holds.
+7. The repository's pull request checks pass on the branch: recorded on the pull request.
+8. `gap-report.md` opens with a filled `## Evaluation brief`. Holds.
