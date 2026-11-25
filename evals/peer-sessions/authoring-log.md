@@ -361,3 +361,12 @@ Relayed by Kerem: close both CodeRabbit oracle gaps, fix F-1 in this PR, documen
 - Repair (commit after `b779450`): O-013 allows the confirmation anywhere and requires it nowhere, and bounds the list at 16 entries. 31 engine cases hold, 10 new. Replay over every development teardown observation: 8 change from false to true, each a correct teardown with no final confirmation; none from true to false. O-010 unchanged.
 - The baseline's scores carry the old O-013, so the development partition is rerun. If the rerun's baseline again holds one of the two model slips, the pr tier blocks again; that is reported to Murat.
 - Held-out: source unchanged (`sha256:3883eace…`); the view carries the shared contract, so the freeze moves before any held-out run on it: view `held-out-w4njkfh1`, `heldOutDigest` `sha256:01e128b80a90fb7675f0526843113ad7eb396d76aa3916fdec0e037a30c05131`. `check` reports no authoring defects; `withhold-check` refuses P-024 inside the lab. View `held-out-66770a1j` has no run and is superseded.
+
+### Development rerun on the repaired O-013 and the held-out rerun
+
+- Development run `20261125T200115878Z-1c663b00` (exit 0) on commit `ddc0ddd`, `dirty: false`, score `20261125T211949359Z-9d827141`: every probe PASS. 15 of 15 clean controls held in 3 of 3 trials; P-009, P-011, P-013 and P-016 were caught in 3 of 3; defect strength 4 of 4. Neither model slip recurred. `compare` against `71e0f66e`: the four defect probes equivalent.
+- Accepted as the baseline (199 files, commit `464a780`). Local `tea-evaluate ci --tier pr` (`20261125T212009057Z-842ad665`) exit 0: check, compile, seal, oracle-agreement and replay pass, none blocking or warning.
+- T-001's `after` now cites run `1c663b00`, score `9d827141`. P-016's receipt there is the same (caught 3 of 3), and its clean arm held its qualification.
+- Held-out preflight `20261125T212035447Z-b2fa9a92` on view `held-out-w4njkfh1` (exit 0): P-020, P-021, P-023 and P-024 qualified.
+- Held-out run `20261125T215307308Z-4915c484` (exit 0), score `20261125T225747460Z-236b955e`. `run.json` records `heldOutDigest` `sha256:01e128b8…`, the freeze above. Read through `gap-view.json` and `strength-aggregate.json` only: P-020, P-021, P-023 and P-024 caught in 3 of 3 trials; defect strength 4 of 4, which meets the floor of 1.
+- TeA leaves one `/usr/bin/log stream … tea-evaluate-audit-<id>` process per run with a 4-hour timeout; five were still running after their runs ended. That is a leak in TeA, reported with these results.

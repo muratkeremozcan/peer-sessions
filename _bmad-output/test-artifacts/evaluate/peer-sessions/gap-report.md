@@ -6,15 +6,15 @@
   There are 15 scenarios, one per behavior in `requirements.md`, and each one ran 3 times.
   Each model call gets 540 seconds.
 - **Verdict:** PASS.
-  Every probe of development score `20261125T172027108Z-a7538347` reads PASS.
-  Every probe of held-out score `20261125T155725218Z-3f863587` exited 0, and its defect strength meets the floor.
+  Every probe of development score `20261125T211949359Z-9d827141` reads PASS.
+  Every probe of held-out score `20261125T225747460Z-236b955e` exited 0, and its defect strength meets the floor.
 - **What it means:** the skill did the right thing in every scenario and every trial, and the checks caught every planted defect.
 - **Caught:** 4 of 4 planted defects on development (P-009, P-011, P-013, P-016) and 4 of 4 on held-out (P-020, P-021, P-023, P-024), each in 3 of 3 trials.
 - **Not caught:** nothing that was planted.
   11 behaviors have no planted defect, so their checks are unproven against a regression.
 - **Limits:** see "What the evaluation can't prove" below.
 - **Next step:** add the `CLAUDE_CODE_OAUTH_TOKEN` repo secret so CI can run the live tier.
-- **Links:** development run `20261125T160210255Z-6051cc54`, its score, the accepted baseline in `evals/peer-sessions/baseline/`, the local `pr` tier run `20261125T172107505Z-12032768`, `evals/peer-sessions/ci/evaluation-ci-plan.json`, `evals/peer-sessions/target-findings.json` and PR #7.
+- **Links:** development run `20261125T200115878Z-1c663b00`, its score, the accepted baseline in `evals/peer-sessions/baseline/`, the local `pr` tier run `20261125T212009057Z-842ad665`, `evals/peer-sessions/ci/evaluation-ci-plan.json`, `evals/peer-sessions/target-findings.json` and PR #7.
 
 ## What the target got wrong
 
@@ -34,20 +34,20 @@ No other run, earlier or current, shows a target problem.
 ## Net improvements
 
 - **T-001:** before the fix, P-016's clean arm failed its qualification in run `20261124T232529002Z-e8ee2007`, and no scored run measured it.
-  After the fix, run `20261125T160210255Z-6051cc54` (score `20261125T172027108Z-a7538347`):
+  After the fix, run `20261125T200115878Z-1c663b00` (score `20261125T211949359Z-9d827141`):
   - P-016's clean arm held its qualification;
   - P-015, the B-005 clean control, held in 3 of 3 trials;
   - P-016 caught its planted defect in 3 of 3 trials.
-- `compare` of that run against the old baseline `20261124T235450135Z-0ae6815c` (target `35e006c`) reports P-009, P-011, P-013 and P-016 equivalent.
+- `compare` against the old baseline `20261124T235450135Z-0ae6815c` (target `35e006c`) reports P-009, P-011, P-013 and P-016 equivalent for runs `20261125T130012203Z-49c3dc05` and `20261125T160210255Z-6051cc54`, the first two on `56d6149`.
   The other 15 probes have no planted defect, so `compare` reports them incomparable.
-  Run `20261125T130012203Z-49c3dc05`, the first on `56d6149`, reads the same against that baseline.
-- Held-out P-023, the B-005 case, was caught in 3 of 3 trials before the fix (score `20261125T035055963Z-44839a38`) and after it (score `20261125T155725218Z-3f863587`).
+  Each later baseline compares equivalent with the one before it.
+- Held-out P-023, the B-005 case, was caught in 3 of 3 trials before the fix (score `20261125T035055963Z-44839a38`) and after it (scores `20261125T155725218Z-3f863587` and `20261125T225747460Z-236b955e`).
 
 ## Gaps
 
 ### Classification
 
-Each failure was classed as a target problem or an instrument problem before any repair.
+Each failure was classed as a target problem, an instrument problem or a model slip before any repair.
 
 | Run | Probe | What failed | Class | Why |
 | --- | --- | --- | --- | --- |
@@ -56,6 +56,9 @@ Each failure was classed as a target problem or an instrument problem before any
 | `20261118T005454372Z-14009b5d` | P-017 | The agent found the scenario's PIDs dead and skipped `kill`. | instrument | The lab contradicted the scenario. |
 | `20261124T224526083Z-bd6466a8` | P-017 | The agent closed a herdr fleet with `cmux close-surface`. | instrument | The scenario never said which multiplexer was in use. |
 | `20261125T155748159Z-2f69fea1` | P-009 baseline | O-013 failed a correct split teardown that started with a `Read` tool call. | instrument | The scenario asks for tool calls, and O-013 accepted shell reads only. |
+| `20261125T183723419Z-71e0f66e` | P-011 trial 1 | O-013 failed a correct split teardown that left the `peer-addr.py` check to the user. | instrument | O-013 required that check as the last action, and B-008 does not ask for it. |
+| `20261125T183723419Z-71e0f66e` | P-013 trial 3 | A read command had an unquoted `;`, so the shell would run `965,1000p` as a command. | model slip | O-013 cannot certify that as a read, and no skill text bears on it. The check stays. |
+| `20261125T183723419Z-71e0f66e` | P-013 trial 1 | The reply printed a line of prose before its JSON. | model slip | Once in 3,345 observations. The check stays. |
 
 ### What the evaluation can't prove
 
@@ -71,9 +74,13 @@ Each failure was classed as a target problem or an instrument problem before any
   A new case, P-024, was written before any oracle change and frozen before any held-out run.
 - While fixing O-013, a scan printed one line from an archived record of the retired P-022.
   It was a development step, and nothing held-out changed after it.
-- The O-013 fix came after the held-out score.
-  O-013 belongs to no held-out case, and the held-out cases are unchanged.
-  The held-out fingerprint still moves, because the held-out view carries the shared contract.
+- The option-token fix changed the held-out O-105 and P-024 the same way as the development checks.
+  No held-out reply was read for it.
+  The held-out view carries the shared contract, so each contract change moved the freeze.
+  Each new freeze came before any held-out run on it, and the last held-out run records it.
+- The `pr` tier blocks when the baseline holds a mutated-arm reply that breaks a check no defect finding cites.
+  Two model slips did that once (run `20261125T183723419Z-71e0f66e`), and the rerun held none.
+  A later baseline can hold one again by chance; the fix is a rerun.
 - The agent ran outside TeA's sandbox so it could use the Keychain login.
   A Seatbelt profile still blocked it from the held-out folder.
 - A live run needs a logged-in Claude CLI and about 80 minutes per partition, so CI runs only the offline `pr` tier.
@@ -91,6 +98,12 @@ Each failure was classed as a target problem or an instrument problem before any
   The scenario asks for tool calls as well as shell commands, so it now also accepts Read, Grep, Glob and LS.
   A tool call that writes, chains another command or substitutes one still fails.
   Replaying 151 development replies flipped 35 from fail to pass and none the other way.
+- **Option tokens.** The default-runtime launch pattern skipped any command whose text contained `--runtime`, `--help` or `-h`, so `spawn-fleet.py orbits:/tmp/--runtime-review` read as no launch (CodeRabbit on PR #7).
+  It now matches those flags only as whole option tokens, in O-010, P-013, the held-out O-105 and P-024.
+  Replaying 498 development replies changed no verdict.
+- **Teardown confirmation.** O-013 required the `peer-addr.py` check as the last action of a split teardown, and B-008 does not ask for it.
+  It now allows that check anywhere and requires it nowhere.
+  Replaying every development teardown flipped 8 from fail to pass and none the other way.
 - **Push during a run.** A push moved a git ref that TeA's rollback check watches, and preflight stopped.
   Nothing was pushed or fetched during a run after that.
 - **G-6.** The read-only check rejected a correct teardown.
@@ -140,18 +153,18 @@ Since 10.1.1 applies waivers, both gaps count as waived and the verdict is PASS.
 
 ### Development results
 
-Run `20261125T160210255Z-6051cc54` on commit `2239ae5`, score `20261125T172027108Z-a7538347`:
+Run `20261125T200115878Z-1c663b00` on commit `ddc0ddd`, score `20261125T211949359Z-9d827141`:
 
 - 15 of 15 clean controls held in 3 of 3 trials.
 - 4 of 4 planted defects caught: P-009 (B-001), P-011 (B-002), P-013 (B-003), P-016 (B-005).
 - Defect strength 4 of 4, which meets the floor of 1.
-- Accepted as the baseline: 199 files in `evals/peer-sessions/baseline/`, commit `f381384`.
-  `compare` against the previous baseline (`20261125T130012203Z-49c3dc05`) reports the four defect probes equivalent.
-  The local `pr` tier (`20261125T172107505Z-12032768`) replays it with exit 0.
+- Accepted as the baseline: 199 files in `evals/peer-sessions/baseline/`, commit `464a780`.
+  `compare` against the previous baseline (`20261125T183723419Z-71e0f66e`) reports the four defect probes equivalent.
+  The local `pr` tier (`20261125T212009057Z-842ad665`) replays it with exit 0.
 
 ## Held-out results
 
-Run `20261125T145324681Z-830d84ce`, score `20261125T155725218Z-3f863587`, freeze `sha256:bfab57ce4e91efa17f4dcd54d6635b33b9181846ec05eacba46bb29dda8c4e13`.
+Run `20261125T215307308Z-4915c484`, score `20261125T225747460Z-236b955e`, freeze `sha256:01e128b80a90fb7675f0526843113ad7eb396d76aa3916fdec0e037a30c05131`.
 Rows as `gap-view.json` gives them:
 
 | Probe | Class | Caught | Votes |

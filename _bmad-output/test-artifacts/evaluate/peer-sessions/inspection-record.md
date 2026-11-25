@@ -91,10 +91,10 @@ Worker research: test inventory and history drafted by two Haiku workers, verifi
 Pull request checklist (`references/ci.md`):
 
 1. Inputs committed (`contract.json`, `evaluation.json`, `requirements.md`, `probes/`, `mutations/`, `policy/`, `corpus-index.json`, `ci/evaluation-ci-plan.json`); `tea-evaluate check` exits 0. Holds.
-2. Development run over that commit: `20261125T160210255Z-6051cc54` on `2239ae5`, `dirty: false`. Holds.
-3. Scored by `20261125T172027108Z-a7538347`; no probe reads `unreached`, `abstained` or `oracle-error`. Holds.
-4. Baseline accepted from that run and committed in `f381384`. Holds.
-5. Held-out frozen and independent: read only through `gap-view.json`; `check` over the view prints no `held-out-drift` warning; run `20261125T145324681Z-830d84ce` records the frozen `heldOutDigest` (`sha256:bfab57ce…`). Holds, with the retired P-022, the P-024 witness repair before the run and the later O-013 change disclosed in the authoring log (now `evals/peer-sessions/authoring-log.md`) and the gap report.
-6. `tea-evaluate ci --tier pr` exits 0 locally (`20261125T172107505Z-12032768`). Holds.
+2. Development run over that commit: `20261125T200115878Z-1c663b00` on `ddc0ddd`, `dirty: false`. Holds.
+3. Scored by `20261125T211949359Z-9d827141`; no probe reads `unreached`, `abstained` or `oracle-error`. Holds.
+4. Baseline accepted from that run and committed in `464a780`. Holds.
+5. Held-out frozen and independent: read only through `gap-view.json`; `check` over the view prints no `held-out-drift` warning; run `20261125T215307308Z-4915c484` records the frozen `heldOutDigest` (`sha256:01e128b8…`) of view `held-out-w4njkfh1`. Holds, with the retired P-022, the P-024 witness repair, the option-token fix and the O-013 changes disclosed in the authoring log (now `evals/peer-sessions/authoring-log.md`) and the gap report.
+6. `tea-evaluate ci --tier pr` exits 0 locally (`20261125T212009057Z-842ad665`). Holds.
 7. The repository's pull request checks pass on the branch: recorded on the pull request.
 8. `gap-report.md` opens with a filled `## Evaluation brief`. Holds.
