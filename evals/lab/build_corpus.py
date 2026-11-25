@@ -129,9 +129,13 @@ SPAWN_SCRIPT = (
     r"""(?:python3?[ \t]+|)"""
     r"""(?:"[^"\n]*/spawn-fleet\.py"|'[^'\n]*/spawn-fleet\.py'|[\w./~+$\{\}-]*spawn-fleet\.py)"""
 )
+# The exclusions match whole option tokens, optionally quoted, so a directory
+# argument such as orbits:/tmp/--runtime-review still reads as a launch
+# (CodeRabbit on PR 7, r4693803470).
+OPTION_END = r"""(?:[ \t\n;&|='"]|$)"""
 DEFAULT_RUNTIME_LAUNCH = (
     rf"{COMMAND_POSITION}{SPAWN_SCRIPT}(?=[ \t\n;&|]|$)"
-    r"(?![^\n;&|]*(?:--runtime|[ \t]-h(?:[ \t\n;&|]|$)|[ \t]--help\b))[\s\S]*$"
+    rf"""(?![^\n;&|]*[ \t]['"]?(?:--runtime|--help|-h){OPTION_END})[\s\S]*$"""
 )
 
 
