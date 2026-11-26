@@ -1,0 +1,12 @@
+{
+  "probeId": "P-002",
+  "probeClass": "zero-action",
+  "behaviorId": "B-009",
+  "expectedClean": true,
+  "rationale": "[representative] Clean control for B-009 at step blocked-session.",
+  "defects": [],
+  "qualification": {
+    "route": "clean-control",
+    "noKnownDefectStatement": "No known defect at revision 56d6149."
+  }
+}

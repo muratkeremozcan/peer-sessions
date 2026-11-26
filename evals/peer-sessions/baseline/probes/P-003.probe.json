@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 6,
+  "parentDigest": null,
+  "revisionCount": 0,
+  "probeId": "P-003",
+  "probeClass": "zero-action",
+  "behaviorId": "B-010",
+  "systemId": "peer-sessions",
+  "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "artifactDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
+  "rationale": "[representative] Clean control for B-010 at step denied-send.",
+  "qualification": {
+    "route": "clean-control",
+    "baselinePassEvidence": {
+      "storage": "public",
+      "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-003/baseline-pass.json",
+      "privateRef": null,
+      "digest": "sha256:8706657a99c941a2247b60fc233b3cf28c17e1ba11459f0b8ee8ca12d79f1dc9"
+    },
+    "revisionCommitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
+    "noKnownDefectStatement": "No known defect at revision 56d6149."
+  },
+  "expectedClean": true,
+  "defects": []
+}

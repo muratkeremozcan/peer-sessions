@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 6,
+  "parentDigest": null,
+  "revisionCount": 0,
+  "probeId": "P-009",
+  "probeClass": "defect",
+  "behaviorId": "B-001",
+  "systemId": "peer-sessions",
+  "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+  "artifactDigest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571",
+  "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
+  "rationale": "[negative] M-008: The agent names the session worker-1 instead of the branch name.",
+  "qualification": {
+    "route": "controlled-mutation",
+    "mutationSource": "peer-sessions/SKILL.md",
+    "mutationOperator": "replace-exact: \"**Name each session after its git branch.** One name then reads the same in the herdr or cmux workspace title, the agent's own session name (`claude --name`, Codex `/rename`) and the resume command the user runs after a reboot (`claude --resume <name>`, `codex resume <name>`). Pass `DIR` alone when it is a checkout or worktree: the script names the session after the branch there (`feat/T27-Mağaza` becomes `feat-t27-magaza`; herdr caps names at 32 characters, so a longer branch is cut at a word). Pick a `NAME` yourself only when the directory has no branch of its own, or when several sessions share one checkout; then name it after the work (`t27-review`). Never use generic names like `worker-1`.\" -> \"**Name sessions by launch order.** Always pass `NAME:DIR` and name the sessions `worker-1`, `worker-2` and so on, so names stay short and uniform across fleets. Do not derive names from branches.\" (occurrences 1)",
+    "targetArtifact": {
+      "storage": "public",
+      "path": "peer-sessions/SKILL.md",
+      "privateRef": null,
+      "digest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571"
+    },
+    "expectedObservableFailure": "The agent names the session worker-1 instead of the branch name.",
+    "baselinePassEvidence": {
+      "storage": "public",
+      "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-009/baseline-pass.json",
+      "privateRef": null,
+      "digest": "sha256:67b5e20a91c483dc9e66d9a85507735e7d4d90341cd08e5db1f8f46ee5887710"
+    },
+    "mutatedFailEvidence": {
+      "storage": "public",
+      "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-009/mutated-fail.json",
+      "privateRef": null,
+      "digest": "sha256:c12ec0e4c7bf081378b931e454529782194c2a7c748ffc672d9ed8a5c93f617e"
+    },
+    "rollbackVerified": true
+  },
+  "expectedClean": false,
+  "defects": [
+    {
+      "defectId": "D-008",
+      "behaviorId": "B-001",
+      "summary": "The agent names the session worker-1 instead of the branch name.",
+      "severity": "material",
+      "oracleEvidence": [
+        {
+          "storage": "public",
+          "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-009/mutated-fail.json",
+          "privateRef": null,
+          "digest": "sha256:c12ec0e4c7bf081378b931e454529782194c2a7c748ffc672d9ed8a5c93f617e"
+        }
+      ],
+      "source": "controlled-mutation",
+      "manifestationWitness": {
+        "legId": "manifest-spawn-worktree",
+        "interfaceId": "peer-sessions-runner",
+        "operationId": "run-skill",
+        "inputs": {
+          "argument": {},
+          "option": {
+            "agent": "claude",
+            "skill-root": "peer-sessions",
+            "timeout-ms": "540000",
+            "model": "claude-opus-5-5",
+            "capability": "command-execution",
+            "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/spawn-worktree/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/spawn-worktree/projects\",\"HERDR_ENV\":\"1\",\"HERDR_PANE_ID\":\"wT:p1\",\"HERDR_WORKSPACE_ID\":\"wT\"}}"
+          },
+          "environment": {},
+          "stdin": {
+            "kind": "text",
+            "value": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init`.\nThen the user asks: start one Claude peer session working in the checkout `lab-repo/` for a long research task. Do it now with the skill's spawn script; do not send it a brief yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"sessionNames\" (array of the session names the spawn created, in order)."
+          }
+        },
+        "relation": {
+          "op": "equality",
+          "operands": [
+            {
+              "pointer": "/interactions/manifest-spawn-worktree/stdout/sessionNames/0"
+            },
+            {
+              "literal": "worker-1"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "defectSignature": {
+    "interfaceKind": "cli",
+    "invocation": {
+      "executable": "tea-skill-runner",
+      "subcommandPath": []
+    },
+    "observableChannel": "stdout",
+    "condition": {
+      "selector": {
+        "inputBinding": {
+          "path": null,
+          "query": null,
+          "header": null,
+          "body": null,
+          "argument": null,
+          "option": {
+            "agent": {
+              "matcher": "any"
+            }
+          },
+          "environment": null,
+          "stdin": {
+            "prompt": {
+              "literal": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init`.\nThen the user asks: start one Claude peer session working in the checkout `lab-repo/` for a long research task. Do it now with the skill's spawn script; do not send it a brief yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"sessionNames\" (array of the session names the spawn created, in order)."
+            }
+          },
+          "arguments": null
+        }
+      },
+      "predicate": {
+        "op": "equality",
+        "operands": [
+          {
+            "pointer": "/interactions/observed/stdout/sessionNames/0"
+          },
+          {
+            "literal": "worker-1"
+          }
+        ]
+      }
+    }
+  }
+}

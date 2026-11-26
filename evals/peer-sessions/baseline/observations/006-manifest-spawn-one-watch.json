@@ -1,0 +1,59 @@
+{
+  "legId": "manifest-spawn-one-watch",
+  "sequence": 6,
+  "workspace": "mutated:M-009",
+  "cwd": "<workspace>",
+  "request": {
+    "probeId": "manifest-spawn-one-watch",
+    "interfaceId": "peer-sessions-runner",
+    "operationId": "run-skill",
+    "kind": "cli",
+    "executable": "tea-skill-runner",
+    "subcommandPath": [],
+    "channels": {
+      "argument": {},
+      "option": {
+        "agent": "claude",
+        "skill-root": "peer-sessions",
+        "timeout-ms": "540000",
+        "model": "claude-opus-5-5",
+        "capability": "command-execution",
+        "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/spawn-one-watch/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/spawn-one-watch/projects\",\"HERDR_ENV\":\"1\",\"HERDR_PANE_ID\":\"wT:p1\",\"HERDR_WORKSPACE_ID\":\"wT\"}}"
+      },
+      "environment": [
+        "HOME",
+        "USER"
+      ],
+      "stdin": {
+        "kind": "text",
+        "value": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-one-watch`.\nThe user says: start two Claude peers, one in `lab/x` and one in `lab/y`, to each skim one README for two minutes. Do it now with the skill's spawn script; do not send briefs yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"placement\" (the --placement value you used: split, workspace or window)."
+      }
+    }
+  },
+  "observation": {
+    "probeId": "manifest-spawn-one-watch",
+    "interfaceId": "peer-sessions-runner",
+    "operationId": "run-skill",
+    "kind": "cli",
+    "exitCode": 0,
+    "stdout": {
+      "kind": "json",
+      "value": {
+        "actionsRun": [
+          "Bash: rm -rf .peer-lab/spawn-one-watch",
+          "Bash: cat peer-sessions/SKILL.md; ls -R peer-sessions",
+          "Bash: ls -la lab lab/x lab/y; git -C lab/x rev-parse --abbrev-ref HEAD; git -C lab/y rev-parse --abbrev-ref HEAD; grep -n -i -A3 \"dirs\\|name\" peer-sessions/references/placement.md | head -60",
+          "Bash: python3 peer-sessions/scripts/spawn-fleet.py --placement workspace x-readme-skim:lab/x y-readme-skim:lab/y",
+          "Bash: python3 peer-sessions/scripts/peer-addr.py --name x-readme-skim --details; python3 peer-sessions/scripts/peer-addr.py --name y-readme-skim --details"
+        ],
+        "tellUser": "I started both peers. They're in one new herdr workspace (wF1): `x-readme-skim` is in `lab/x` (pane p1) and `y-readme-skim` is in `lab/y` (pane p2). The spawn script reported both ready and exited 0. `lab/x` and `lab/y` didn't exist and aren't git checkouts, so the script created them, and I named the sessions after their task. No briefs have been sent.\n\nOne thing to check before you send briefs: both sessions show the same PID (50938) and the same address (`uds:/tmp/pslab-6fjglrpa/s.sock`), even though their session IDs differ (e08ec19c… and e0a13bf6…). That means a message sent to that address can't be aimed at just one of them. The teardown the script printed also kills only that one PID, so it may leave the second session running. When we brief them, I'd use the session names, or `herdr agent prompt <name>` if SendMessage bounces, and check which session actually gets each brief.\n\nBoth sessions are still running and stay up until you ask me to stop them. Teardown, which I haven't run:\n  kill 50938\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\nAfter teardown, run that last command to confirm both sessions are gone.\n\nTo resume after a reboot:\n  cd lab/x && claude --resume x-readme-skim\n  cd lab/y && claude --resume y-readme-skim",
+        "placement": "workspace"
+      }
+    },
+    "stderr": {
+      "kind": "text",
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":74708,\"outputTokens\":1887,\"costUsd\":\"0.1232628\"}\n"
+    },
+    "artifacts": {}
+  }
+}

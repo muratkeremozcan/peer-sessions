@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "checks": [
+    {
+      "id": "check",
+      "tier": "pr",
+      "trigger": [
+        "pull-request"
+      ],
+      "kind": "evaluate",
+      "command": [
+        "tea-evaluate",
+        "check",
+        "--evaluation",
+        "evals/peer-sessions"
+      ],
+      "enforcement": "block",
+      "evidence": [
+        "runs/<invocationId>/checks/check/stdout"
+      ],
+      "placement": {
+        "tier": "pr",
+        "defaultTier": "pr",
+        "reason": "Deterministic, no secret and no model call. .github/workflows/tests.yml runs on pull_request and push to main with no secret, so it runs there on every pull request."
+      }
+    },
+    {
+      "id": "compile",
+      "tier": "pr",
+      "trigger": [
+        "pull-request"
+      ],
+      "kind": "evaluate",
+      "command": [
+        "tea-evaluate",
+        "ci",
+        "--evaluation",
+        "evals/peer-sessions",
+        "--tier",
+        "pr"
+      ],
+      "enforcement": "block",
+      "evidence": [
+        "runs/<invocationId>/checks/compile/eval-contract.json"
+      ],
+      "placement": {
+        "tier": "pr",
+        "defaultTier": "pr",
+        "reason": "Deterministic, no secret and no model call; joins the pull_request jobs of .github/workflows/tests.yml."
+      }
+    },
+    {
+      "id": "seal",
+      "tier": "pr",
+      "trigger": [
+        "pull-request"
+      ],
+      "kind": "evaluate",
+      "command": [
+        "tea-evaluate",
+        "ci",
+        "--evaluation",
+        "evals/peer-sessions",
+        "--tier",
+        "pr"
+      ],
+      "enforcement": "block",
+      "evidence": [
+        "runs/<invocationId>/checks/seal/sealed-evaluator-brief.json"
+      ],
+      "placement": {
+        "tier": "pr",
+        "defaultTier": "pr",
+        "reason": "Deterministic, no secret and no model call; joins the pull_request jobs of .github/workflows/tests.yml."
+      }
+    },
+    {
+      "id": "oracle-agreement",
+      "tier": "pr",
+      "trigger": [
+        "pull-request"
+      ],
+      "kind": "evaluate",
+      "command": [
+        "tea-evaluate",
+        "ci",
+        "--evaluation",
+        "evals/peer-sessions",
+        "--tier",
+        "pr"
+      ],
+      "enforcement": "block",
+      "evidence": [
+        "baseline/scores"
+      ],
+      "placement": {
+        "tier": "pr",
+        "defaultTier": "pr",
+        "reason": "Deterministic over the accepted baseline/ records, no secret and no model call; CAP-11 keeps it on every pull request."
+      }
+    },
+    {
+      "id": "replay",
+      "tier": "pr",
+      "trigger": [
+        "pull-request"
+      ],
+      "kind": "evaluate",
+      "command": [
+        "tea-evaluate",
+        "ci",
+        "--evaluation",
+        "evals/peer-sessions",
+        "--tier",
+        "pr"
+      ],
+      "enforcement": "block",
+      "evidence": [
+        "runs/<invocationId>/replay/preflight-verdict.json",
+        "runs/<invocationId>/replay/scores"
+      ],
+      "placement": {
+        "tier": "pr",
+        "defaultTier": "pr",
+        "reason": "Deterministic replay of the accepted baseline/ records, no secret and no model call; CAP-11 keeps it on every pull request."
+      }
+    },
+    {
+      "id": "preflight-live",
+      "tier": "release",
+      "trigger": [
+        "release"
+      ],
+      "kind": "evaluate",
+      "command": [
+        "tea-evaluate",
+        "preflight",
+        "--evaluation",
+        "evals/peer-sessions"
+      ],
+      "enforcement": "block",
+      "evidence": [
+        "runs/<invocationId>/checks/preflight-live/stdout"
+      ],
+      "placement": {
+        "tier": "release",
+        "defaultTier": "release",
+        "reason": "The target is a skill runner that needs the Claude login (CLAUDE_CODE_OAUTH_TOKEN), and no workflow in .github/workflows has a schedule trigger, so no scheduled entry exists. The repository has no tags, releases or release workflow (gh release list and git ls-remote --tags are empty), so the release tier is a published GitHub release that framework CI setup creates. One live run is about 270 agent calls (15 steps, 6 arms, 3 trials) at about 3 hours, which rules out pull_request and push. The skill ships by clone, so no publish or deploy job exists to gate. The held-out partition lives outside the repository in a mode-0700 state directory the agent cannot read, so it runs on the operator's machine through evals/lab/prepare_held_out.py and has no CI entry."
+      }
+    },
+    {
+      "id": "twin-run",
+      "tier": "release",
+      "trigger": [
+        "release"
+      ],
+      "kind": "evaluate",
+      "command": [
+        "tea-evaluate",
+        "ci",
+        "--evaluation",
+        "evals/peer-sessions",
+        "--tier",
+        "release"
+      ],
+      "enforcement": "block",
+      "evidence": [
+        "runs/<invocationId>/checks/twin-run/stdout"
+      ],
+      "placement": {
+        "tier": "release",
+        "defaultTier": "release",
+        "reason": "The target is a skill runner that needs the Claude login (CLAUDE_CODE_OAUTH_TOKEN), and no workflow in .github/workflows has a schedule trigger, so no scheduled entry exists. The repository has no tags, releases or release workflow (gh release list and git ls-remote --tags are empty), so the release tier is a published GitHub release that framework CI setup creates. One live run is about 270 agent calls (15 steps, 6 arms, 3 trials) at about 3 hours, which rules out pull_request and push. The skill ships by clone, so no publish or deploy job exists to gate. The held-out partition lives outside the repository in a mode-0700 state directory the agent cannot read, so it runs on the operator's machine through evals/lab/prepare_held_out.py and has no CI entry."
+      }
+    },
+    {
+      "id": "strength-comparison",
+      "tier": "release",
+      "trigger": [
+        "release"
+      ],
+      "kind": "evaluate",
+      "command": [
+        "tea-evaluate",
+        "ci",
+        "--evaluation",
+        "evals/peer-sessions",
+        "--tier",
+        "release"
+      ],
+      "enforcement": "warn",
+      "evidence": [
+        "runs/<invocationId>/checks/strength-comparison/stdout"
+      ],
+      "placement": {
+        "tier": "release",
+        "defaultTier": "release",
+        "reason": "The target is a skill runner that needs the Claude login (CLAUDE_CODE_OAUTH_TOKEN), and no workflow in .github/workflows has a schedule trigger, so no scheduled entry exists. The repository has no tags, releases or release workflow (gh release list and git ls-remote --tags are empty), so the release tier is a published GitHub release that framework CI setup creates. One live run is about 270 agent calls (15 steps, 6 arms, 3 trials) at about 3 hours, which rules out pull_request and push. The skill ships by clone, so no publish or deploy job exists to gate. The held-out partition lives outside the repository in a mode-0700 state directory the agent cannot read, so it runs on the operator's machine through evals/lab/prepare_held_out.py and has no CI entry."
+      }
+    }
+  ]
+}

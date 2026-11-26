@@ -25,7 +25,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        # From 2026-11-16 GitHub cancelled every macos-latest job unacquired
+        # ("not acquired by Runner of type hosted", with an arm64 capacity notice).
+        os: [ubuntu-latest, macos-15]
         python: ["3.9", "3.13"]
         # 3.9 is the macOS system python3 the skill runs on, so it stays on
         # macOS. setup-python ships no 3.9 build for Ubuntu 26.04.
@@ -33,6 +35,7 @@ jobs:
           - os: ubuntu-latest
             python: "3.9"
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
@@ -43,3 +46,23 @@ jobs:
       - run: python -W error::ResourceWarning -m unittest discover -s tests -v
         env:
           PYTHONDONTWRITEBYTECODE: "1"
+      - name: lab tests
+        run: python -W error::ResourceWarning -m unittest discover -s evals/lab -p 'test_*.py' -v
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+
+  evaluation:
+    # The deterministic PR tier of evals/peer-sessions/ci/evaluation-ci-plan.json:
+    # check, compile, seal, oracle agreement and replay over baseline/. No model
+    # call and no secret.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - run: npm ci --prefix evals --ignore-scripts
+      - run: npm exec --prefix evals -- tea-evaluate ci --evaluation evals/peer-sessions --tier pr

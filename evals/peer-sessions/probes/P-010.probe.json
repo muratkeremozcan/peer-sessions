@@ -1,0 +1,12 @@
+{
+  "probeId": "P-010",
+  "probeClass": "zero-action",
+  "behaviorId": "B-002",
+  "expectedClean": true,
+  "rationale": "[representative] Clean control for B-002 at step spawn-one-watch.",
+  "defects": [],
+  "qualification": {
+    "route": "clean-control",
+    "noKnownDefectStatement": "No known defect at revision 56d6149."
+  }
+}

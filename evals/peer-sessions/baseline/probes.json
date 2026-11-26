@@ -1,0 +1,690 @@
+[
+  {
+    "schemaVersion": 6,
+    "parentDigest": null,
+    "revisionCount": 0,
+    "probeId": "P-009",
+    "probeClass": "defect",
+    "behaviorId": "B-001",
+    "systemId": "peer-sessions",
+    "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+    "artifactDigest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571",
+    "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
+    "rationale": "[negative] M-008: The agent names the session worker-1 instead of the branch name.",
+    "qualification": {
+      "route": "controlled-mutation",
+      "mutationSource": "peer-sessions/SKILL.md",
+      "mutationOperator": "replace-exact: \"**Name each session after its git branch.** One name then reads the same in the herdr or cmux workspace title, the agent's own session name (`claude --name`, Codex `/rename`) and the resume command the user runs after a reboot (`claude --resume <name>`, `codex resume <name>`). Pass `DIR` alone when it is a checkout or worktree: the script names the session after the branch there (`feat/T27-Mağaza` becomes `feat-t27-magaza`; herdr caps names at 32 characters, so a longer branch is cut at a word). Pick a `NAME` yourself only when the directory has no branch of its own, or when several sessions share one checkout; then name it after the work (`t27-review`). Never use generic names like `worker-1`.\" -> \"**Name sessions by launch order.** Always pass `NAME:DIR` and name the sessions `worker-1`, `worker-2` and so on, so names stay short and uniform across fleets. Do not derive names from branches.\" (occurrences 1)",
+      "targetArtifact": {
+        "storage": "public",
+        "path": "peer-sessions/SKILL.md",
+        "privateRef": null,
+        "digest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571"
+      },
+      "expectedObservableFailure": "The agent names the session worker-1 instead of the branch name.",
+      "baselinePassEvidence": {
+        "storage": "public",
+        "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-009/baseline-pass.json",
+        "privateRef": null,
+        "digest": "sha256:67b5e20a91c483dc9e66d9a85507735e7d4d90341cd08e5db1f8f46ee5887710"
+      },
+      "mutatedFailEvidence": {
+        "storage": "public",
+        "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-009/mutated-fail.json",
+        "privateRef": null,
+        "digest": "sha256:c12ec0e4c7bf081378b931e454529782194c2a7c748ffc672d9ed8a5c93f617e"
+      },
+      "rollbackVerified": true
+    },
+    "expectedClean": false,
+    "defects": [
+      {
+        "defectId": "D-008",
+        "behaviorId": "B-001",
+        "summary": "The agent names the session worker-1 instead of the branch name.",
+        "severity": "material",
+        "oracleEvidence": [
+          {
+            "storage": "public",
+            "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-009/mutated-fail.json",
+            "privateRef": null,
+            "digest": "sha256:c12ec0e4c7bf081378b931e454529782194c2a7c748ffc672d9ed8a5c93f617e"
+          }
+        ],
+        "source": "controlled-mutation",
+        "manifestationWitness": {
+          "legId": "manifest-spawn-worktree",
+          "interfaceId": "peer-sessions-runner",
+          "operationId": "run-skill",
+          "inputs": {
+            "argument": {},
+            "option": {
+              "agent": "claude",
+              "skill-root": "peer-sessions",
+              "timeout-ms": "540000",
+              "model": "claude-opus-5-5",
+              "capability": "command-execution",
+              "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/spawn-worktree/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/spawn-worktree/projects\",\"HERDR_ENV\":\"1\",\"HERDR_PANE_ID\":\"wT:p1\",\"HERDR_WORKSPACE_ID\":\"wT\"}}"
+            },
+            "environment": {},
+            "stdin": {
+              "kind": "text",
+              "value": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init`.\nThen the user asks: start one Claude peer session working in the checkout `lab-repo/` for a long research task. Do it now with the skill's spawn script; do not send it a brief yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"sessionNames\" (array of the session names the spawn created, in order)."
+            }
+          },
+          "relation": {
+            "op": "equality",
+            "operands": [
+              {
+                "pointer": "/interactions/manifest-spawn-worktree/stdout/sessionNames/0"
+              },
+              {
+                "literal": "worker-1"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "defectSignature": {
+      "interfaceKind": "cli",
+      "invocation": {
+        "executable": "tea-skill-runner",
+        "subcommandPath": []
+      },
+      "observableChannel": "stdout",
+      "condition": {
+        "selector": {
+          "inputBinding": {
+            "path": null,
+            "query": null,
+            "header": null,
+            "body": null,
+            "argument": null,
+            "option": {
+              "agent": {
+                "matcher": "any"
+              }
+            },
+            "environment": null,
+            "stdin": {
+              "prompt": {
+                "literal": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init`.\nThen the user asks: start one Claude peer session working in the checkout `lab-repo/` for a long research task. Do it now with the skill's spawn script; do not send it a brief yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"sessionNames\" (array of the session names the spawn created, in order)."
+              }
+            },
+            "arguments": null
+          }
+        },
+        "predicate": {
+          "op": "equality",
+          "operands": [
+            {
+              "pointer": "/interactions/observed/stdout/sessionNames/0"
+            },
+            {
+              "literal": "worker-1"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "schemaVersion": 6,
+    "parentDigest": null,
+    "revisionCount": 0,
+    "probeId": "P-011",
+    "probeClass": "defect",
+    "behaviorId": "B-002",
+    "systemId": "peer-sessions",
+    "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+    "artifactDigest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571",
+    "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
+    "rationale": "[negative] M-009: The agent picks a placement other than split for one short watched peer.",
+    "qualification": {
+      "route": "controlled-mutation",
+      "mutationSource": "peer-sessions/SKILL.md",
+      "mutationOperator": "replace-exact: \"| `split` | new panes beside your own pane, in your workspace | 1-3 peers, short work, the user watches you work. Your pane keeps the focus. |\" -> \"| `split` | new panes beside your own pane, in your workspace | never: a split crowds the user's pane. |\" (occurrences 1)",
+      "targetArtifact": {
+        "storage": "public",
+        "path": "peer-sessions/SKILL.md",
+        "privateRef": null,
+        "digest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571"
+      },
+      "expectedObservableFailure": "The agent picks a placement other than split for one short watched peer.",
+      "baselinePassEvidence": {
+        "storage": "public",
+        "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-011/baseline-pass.json",
+        "privateRef": null,
+        "digest": "sha256:f0dbc5d6d5e689d5073f982b123601d9e004b62c8d1d864a6392758e7b16c637"
+      },
+      "mutatedFailEvidence": {
+        "storage": "public",
+        "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-011/mutated-fail.json",
+        "privateRef": null,
+        "digest": "sha256:16ab8976a285a807d17005d3a5b45ead2d3bde9fea3ece43c08526aad3123662"
+      },
+      "rollbackVerified": true
+    },
+    "expectedClean": false,
+    "defects": [
+      {
+        "defectId": "D-009",
+        "behaviorId": "B-002",
+        "summary": "The agent picks a placement other than split for one short watched peer.",
+        "severity": "material",
+        "oracleEvidence": [
+          {
+            "storage": "public",
+            "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-011/mutated-fail.json",
+            "privateRef": null,
+            "digest": "sha256:16ab8976a285a807d17005d3a5b45ead2d3bde9fea3ece43c08526aad3123662"
+          }
+        ],
+        "source": "controlled-mutation",
+        "manifestationWitness": {
+          "legId": "manifest-spawn-one-watch",
+          "interfaceId": "peer-sessions-runner",
+          "operationId": "run-skill",
+          "inputs": {
+            "argument": {},
+            "option": {
+              "agent": "claude",
+              "skill-root": "peer-sessions",
+              "timeout-ms": "540000",
+              "model": "claude-opus-5-5",
+              "capability": "command-execution",
+              "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/spawn-one-watch/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/spawn-one-watch/projects\",\"HERDR_ENV\":\"1\",\"HERDR_PANE_ID\":\"wT:p1\",\"HERDR_WORKSPACE_ID\":\"wT\"}}"
+            },
+            "environment": {},
+            "stdin": {
+              "kind": "text",
+              "value": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-one-watch`.\nThe user says: start two Claude peers, one in `lab/x` and one in `lab/y`, to each skim one README for two minutes. Do it now with the skill's spawn script; do not send briefs yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"placement\" (the --placement value you used: split, workspace or window)."
+            }
+          },
+          "relation": {
+            "op": "all",
+            "operands": [
+              {
+                "op": "existence",
+                "operands": [
+                  {
+                    "pointer": "/interactions/manifest-spawn-one-watch/stdout/placement"
+                  }
+                ]
+              },
+              {
+                "op": "not",
+                "operands": [
+                  {
+                    "op": "equality",
+                    "operands": [
+                      {
+                        "pointer": "/interactions/manifest-spawn-one-watch/stdout/placement"
+                      },
+                      {
+                        "literal": "split"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "defectSignature": {
+      "interfaceKind": "cli",
+      "invocation": {
+        "executable": "tea-skill-runner",
+        "subcommandPath": []
+      },
+      "observableChannel": "stdout",
+      "condition": {
+        "selector": {
+          "inputBinding": {
+            "path": null,
+            "query": null,
+            "header": null,
+            "body": null,
+            "argument": null,
+            "option": {
+              "agent": {
+                "matcher": "any"
+              }
+            },
+            "environment": null,
+            "stdin": {
+              "prompt": {
+                "literal": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-one-watch`.\nThe user says: start two Claude peers, one in `lab/x` and one in `lab/y`, to each skim one README for two minutes. Do it now with the skill's spawn script; do not send briefs yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"placement\" (the --placement value you used: split, workspace or window)."
+              }
+            },
+            "arguments": null
+          }
+        },
+        "predicate": {
+          "op": "all",
+          "operands": [
+            {
+              "op": "existence",
+              "operands": [
+                {
+                  "pointer": "/interactions/observed/stdout/placement"
+                }
+              ]
+            },
+            {
+              "op": "not",
+              "operands": [
+                {
+                  "op": "equality",
+                  "operands": [
+                    {
+                      "pointer": "/interactions/observed/stdout/placement"
+                    },
+                    {
+                      "literal": "split"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "schemaVersion": 6,
+    "parentDigest": null,
+    "revisionCount": 0,
+    "probeId": "P-013",
+    "probeClass": "defect",
+    "behaviorId": "B-003",
+    "systemId": "peer-sessions",
+    "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+    "artifactDigest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571",
+    "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
+    "rationale": "[negative] M-010: The agent launches Claude peers in place of the Codex peers asked for.",
+    "qualification": {
+      "route": "controlled-mutation",
+      "mutationSource": "peer-sessions/SKILL.md",
+      "mutationOperator": "replace-exact: \"If the user asked for Codex peers and herdr is unavailable, say so. Never launch Claude instead.\" -> \"If the user asked for Codex peers and herdr is unavailable, launch Claude peers instead.\" (occurrences 1)",
+      "targetArtifact": {
+        "storage": "public",
+        "path": "peer-sessions/SKILL.md",
+        "privateRef": null,
+        "digest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571"
+      },
+      "expectedObservableFailure": "The agent launches Claude peers in place of the Codex peers asked for.",
+      "baselinePassEvidence": {
+        "storage": "public",
+        "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-013/baseline-pass.json",
+        "privateRef": null,
+        "digest": "sha256:86f33a6f13cf0ee9a6c3871690b130d900dd4362ee899099961bec95314f5bf5"
+      },
+      "mutatedFailEvidence": {
+        "storage": "public",
+        "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-013/mutated-fail.json",
+        "privateRef": null,
+        "digest": "sha256:6ebc7f75798752d20af90e84a8ebeaffe155da890f53f52f7e13e2e94ff7b445"
+      },
+      "rollbackVerified": true
+    },
+    "expectedClean": false,
+    "defects": [
+      {
+        "defectId": "D-010",
+        "behaviorId": "B-003",
+        "summary": "The agent launches Claude peers in place of the Codex peers asked for.",
+        "severity": "critical",
+        "oracleEvidence": [
+          {
+            "storage": "public",
+            "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-013/mutated-fail.json",
+            "privateRef": null,
+            "digest": "sha256:6ebc7f75798752d20af90e84a8ebeaffe155da890f53f52f7e13e2e94ff7b445"
+          }
+        ],
+        "source": "controlled-mutation",
+        "manifestationWitness": {
+          "legId": "manifest-codex-no-herdr",
+          "interfaceId": "peer-sessions-runner",
+          "operationId": "run-skill",
+          "inputs": {
+            "argument": {},
+            "option": {
+              "agent": "claude",
+              "skill-root": "peer-sessions",
+              "timeout-ms": "540000",
+              "model": "claude-opus-5-5",
+              "capability": "command-execution",
+              "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/codex-no-herdr/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/codex-no-herdr/projects\"}}"
+            },
+            "environment": {},
+            "stdin": {
+              "kind": "text",
+              "value": "The user asks for two Codex peers to review a diff. On this machine herdr is not installed and HERDR_ENV is unset; only cmux is available. Do not run any command; take the user's description of this machine as given and decide your next step for this turn.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"runtimeLaunched\" (claude, codex or none: what you launched or would launch this turn)."
+            }
+          },
+          "relation": {
+            "op": "any",
+            "operands": [
+              {
+                "op": "equality",
+                "operands": [
+                  {
+                    "pointer": "/interactions/manifest-codex-no-herdr/stdout/runtimeLaunched"
+                  },
+                  {
+                    "literal": "claude"
+                  }
+                ]
+              },
+              {
+                "op": "all",
+                "operands": [
+                  {
+                    "op": "existence",
+                    "operands": [
+                      {
+                        "pointer": "/interactions/manifest-codex-no-herdr/stdout/actionsRun/0"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "not",
+                    "operands": [
+                      {
+                        "op": "for-all",
+                        "collection": {
+                          "pointer": "/interactions/manifest-codex-no-herdr/stdout/actionsRun"
+                        },
+                        "predicate": {
+                          "op": "not",
+                          "operands": [
+                            {
+                              "op": "regex",
+                              "operands": [
+                                {
+                                  "pointer": "@/"
+                                }
+                              ],
+                              "pattern": "^[\\s\\S]*--runtime[= ]+claude\\b[\\s\\S]*$"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "defectSignature": {
+      "interfaceKind": "cli",
+      "invocation": {
+        "executable": "tea-skill-runner",
+        "subcommandPath": []
+      },
+      "observableChannel": "stdout",
+      "condition": {
+        "selector": {
+          "inputBinding": {
+            "path": null,
+            "query": null,
+            "header": null,
+            "body": null,
+            "argument": null,
+            "option": {
+              "agent": {
+                "matcher": "any"
+              }
+            },
+            "environment": null,
+            "stdin": {
+              "prompt": {
+                "literal": "The user asks for two Codex peers to review a diff. On this machine herdr is not installed and HERDR_ENV is unset; only cmux is available. Do not run any command; take the user's description of this machine as given and decide your next step for this turn.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"runtimeLaunched\" (claude, codex or none: what you launched or would launch this turn)."
+              }
+            },
+            "arguments": null
+          }
+        },
+        "predicate": {
+          "op": "any",
+          "operands": [
+            {
+              "op": "equality",
+              "operands": [
+                {
+                  "pointer": "/interactions/observed/stdout/runtimeLaunched"
+                },
+                {
+                  "literal": "claude"
+                }
+              ]
+            },
+            {
+              "op": "all",
+              "operands": [
+                {
+                  "op": "existence",
+                  "operands": [
+                    {
+                      "pointer": "/interactions/observed/stdout/actionsRun/0"
+                    }
+                  ]
+                },
+                {
+                  "op": "not",
+                  "operands": [
+                    {
+                      "op": "for-all",
+                      "collection": {
+                        "pointer": "/interactions/observed/stdout/actionsRun"
+                      },
+                      "predicate": {
+                        "op": "not",
+                        "operands": [
+                          {
+                            "op": "any",
+                            "operands": [
+                              {
+                                "op": "regex",
+                                "operands": [
+                                  {
+                                    "pointer": "@/"
+                                  }
+                                ],
+                                "pattern": "^[\\s\\S]*--runtime[= ]+claude\\b[\\s\\S]*$"
+                              },
+                              {
+                                "op": "regex",
+                                "operands": [
+                                  {
+                                    "pointer": "@/"
+                                  }
+                                ],
+                                "pattern": "^(?:[^'\"\\\\]*(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)(?:(?:'[^']*'|\"(?:\\\\[\\s\\S]|[^\"\\\\])*\"|\\\\[\\s\\S])[^'\"\\\\]*|)[\\n;&|]+|)[ \\t]*(?:Bash:)?[ \\t]*(?:(?:command|builtin|exec|sudo)[ \\t]+|)(?:[\\w./~+-]+/|)(?:python3?[ \\t]+|)(?:\"[^\"\\n]*/spawn-fleet\\.py\"|'[^'\\n]*/spawn-fleet\\.py'|[\\w./~+$\\{\\}-]*spawn-fleet\\.py)(?=[ \\t\\n;&|]|$)(?![^\\n;&|]*[ \\t]['\"]?(?:--runtime|--help|-h)(?:[ \\t\\n;&|='\"]|$))[\\s\\S]*$"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "schemaVersion": 6,
+    "parentDigest": null,
+    "revisionCount": 0,
+    "probeId": "P-016",
+    "probeClass": "defect",
+    "behaviorId": "B-005",
+    "systemId": "peer-sessions",
+    "implementationDigest": "sha256:f1106e00ce4738db9bb6b1df4bb7243a16cbeba6b5f344713bcf63434b200020",
+    "artifactDigest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571",
+    "commitDigest": "sha256:2e8dfc291caa9362b88a670f669ad35e17f13edfee1a854ee7ad44da7286b9a4",
+    "rationale": "[negative] M-012: The brief ends without a reply address for the caller.",
+    "qualification": {
+      "route": "controlled-mutation",
+      "mutationSource": "peer-sessions/SKILL.md",
+      "mutationOperator": "replace-exact: \"Each brief that expects a reply must end with your literal address (from `peer-addr.py --me`), because the peer cannot find out who you are. Write the task, the reply format and the scope guard above the address line; only a correlation footer (below) may follow it:\\n\\n```\\nWhen done, message me back:\\nSendMessage(to: \\\"uds:/tmp/cc-socks/4667.sock\\\", message: \\\"...\\\")\\n```\" -> \"A peer replies to whoever messaged it automatically, so a brief needs no return address:\\n\\n```\\nWhen done, reply with your summary.\\n```\" (occurrences 1)",
+      "targetArtifact": {
+        "storage": "public",
+        "path": "peer-sessions/SKILL.md",
+        "privateRef": null,
+        "digest": "sha256:2332ad5d55b6cf8224d109a0dda599cf7815213c009ffaae8d0a1dd3bf8f3571"
+      },
+      "expectedObservableFailure": "The brief ends without a reply address for the caller.",
+      "baselinePassEvidence": {
+        "storage": "public",
+        "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-016/baseline-pass.json",
+        "privateRef": null,
+        "digest": "sha256:6762a009e07e5592b56409981df3dbc95bfaf0670cd951f363616de3fa733e81"
+      },
+      "mutatedFailEvidence": {
+        "storage": "public",
+        "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-016/mutated-fail.json",
+        "privateRef": null,
+        "digest": "sha256:1db352dca8f4db7acec71a365af3eb6b95f1f26e1dff4936901cc9fb2ae85f8f"
+      },
+      "rollbackVerified": true
+    },
+    "expectedClean": false,
+    "defects": [
+      {
+        "defectId": "D-012",
+        "behaviorId": "B-005",
+        "summary": "The brief ends without a reply address for the caller.",
+        "severity": "material",
+        "oracleEvidence": [
+          {
+            "storage": "public",
+            "path": "runs/20261126T035951296Z-ba75cbf2/qualification/P-016/mutated-fail.json",
+            "privateRef": null,
+            "digest": "sha256:1db352dca8f4db7acec71a365af3eb6b95f1f26e1dff4936901cc9fb2ae85f8f"
+          }
+        ],
+        "source": "controlled-mutation",
+        "manifestationWitness": {
+          "legId": "manifest-brief-address",
+          "interfaceId": "peer-sessions-runner",
+          "operationId": "run-skill",
+          "inputs": {
+            "argument": {},
+            "option": {
+              "agent": "claude",
+              "skill-root": "peer-sessions",
+              "timeout-ms": "540000",
+              "model": "claude-opus-5-5",
+              "capability": "command-execution",
+              "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/brief-address/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/brief-address/projects\",\"HERDR_ENV\":\"1\",\"HERDR_PANE_ID\":\"wT:p1\",\"HERDR_WORKSPACE_ID\":\"wT\"}}"
+            },
+            "environment": {},
+            "stdin": {
+              "kind": "text",
+              "value": "`peer-addr.py --me` printed `uds:/tmp/cc-socks/987654.sock` for your session. Write the brief you will send to peer `orbits`, asking it to summarise `docs/coordination-contract-v1.md` and reply to you. Do not call SendMessage; just write the brief.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"brief\" (the full brief text)."
+            }
+          },
+          "relation": {
+            "op": "all",
+            "operands": [
+              {
+                "op": "existence",
+                "operands": [
+                  {
+                    "pointer": "/interactions/manifest-brief-address/stdout/brief"
+                  }
+                ]
+              },
+              {
+                "op": "not",
+                "operands": [
+                  {
+                    "op": "regex",
+                    "operands": [
+                      {
+                        "pointer": "/interactions/manifest-brief-address/stdout/brief"
+                      }
+                    ],
+                    "pattern": "^(?![\\s\\S]*uds:/tmp/cc-socks/[0-9]+\\.sock[\\s\\S]*uds:/tmp/cc-socks/[0-9]+\\.sock)[\\s\\S]*(?:^|\\n)[ \\t]*`{0,3}[ \\t]*(?:SendMessage\\([ \\t]*to[ \\t]*:[ \\t]*[\"']?uds:/tmp/cc\\-socks/987654\\.sock[\"']?[ \\t]*,[^\\r\\n]*\\)|[Rr]eply[ \\t]+to[ \\t]+[\"'`]?uds:/tmp/cc\\-socks/987654\\.sock[\"'`]?[.]?)[ \\t]*`{0,3}[ \\t]*(?=\\r?\\n|$)(?:\\r?\\n[ \\t]*```[ \\t]*|)(?:\\r?\\n[ \\t]*\\r?\\n[ \\t]*peer-request: id=\\S+(?: target=\\S+|)(?: generation=\\S+|)\\r?\\nMake the first line of your reply exactly: peer-reply: id=\\S+(?: target=\\S+|)(?: generation=\\S+|)\\r?\\nA reply without that line cannot be matched to this request\\.|)\\s*$"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "defectSignature": {
+      "interfaceKind": "cli",
+      "invocation": {
+        "executable": "tea-skill-runner",
+        "subcommandPath": []
+      },
+      "observableChannel": "stdout",
+      "condition": {
+        "selector": {
+          "inputBinding": {
+            "path": null,
+            "query": null,
+            "header": null,
+            "body": null,
+            "argument": null,
+            "option": {
+              "agent": {
+                "matcher": "any"
+              }
+            },
+            "environment": null,
+            "stdin": {
+              "prompt": {
+                "literal": "`peer-addr.py --me` printed `uds:/tmp/cc-socks/987654.sock` for your session. Write the brief you will send to peer `orbits`, asking it to summarise `docs/coordination-contract-v1.md` and reply to you. Do not call SendMessage; just write the brief.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"brief\" (the full brief text)."
+              }
+            },
+            "arguments": null
+          }
+        },
+        "predicate": {
+          "op": "all",
+          "operands": [
+            {
+              "op": "existence",
+              "operands": [
+                {
+                  "pointer": "/interactions/observed/stdout/brief"
+                }
+              ]
+            },
+            {
+              "op": "not",
+              "operands": [
+                {
+                  "op": "regex",
+                  "operands": [
+                    {
+                      "pointer": "/interactions/observed/stdout/brief"
+                    }
+                  ],
+                  "pattern": "^(?![\\s\\S]*uds:/tmp/cc-socks/[0-9]+\\.sock[\\s\\S]*uds:/tmp/cc-socks/[0-9]+\\.sock)[\\s\\S]*(?:^|\\n)[ \\t]*`{0,3}[ \\t]*(?:SendMessage\\([ \\t]*to[ \\t]*:[ \\t]*[\"']?uds:/tmp/cc\\-socks/987654\\.sock[\"']?[ \\t]*,[^\\r\\n]*\\)|[Rr]eply[ \\t]+to[ \\t]+[\"'`]?uds:/tmp/cc\\-socks/987654\\.sock[\"'`]?[.]?)[ \\t]*`{0,3}[ \\t]*(?=\\r?\\n|$)(?:\\r?\\n[ \\t]*```[ \\t]*|)(?:\\r?\\n[ \\t]*\\r?\\n[ \\t]*peer-request: id=\\S+(?: target=\\S+|)(?: generation=\\S+|)\\r?\\nMake the first line of your reply exactly: peer-reply: id=\\S+(?: target=\\S+|)(?: generation=\\S+|)\\r?\\nA reply without that line cannot be matched to this request\\.|)\\s*$"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "mutationId": "M-009",
+  "mutationSource": "peer-sessions/SKILL.md",
+  "targetArtifact": "peer-sessions/SKILL.md",
+  "operator": {
+    "kind": "replace-exact",
+    "find": "| `split` | new panes beside your own pane, in your workspace | 1-3 peers, short work, the user watches you work. Your pane keeps the focus. |",
+    "replace": "| `split` | new panes beside your own pane, in your workspace | never: a split crowds the user's pane. |",
+    "occurrences": 1
+  },
+  "expectedObservableFailure": "The agent picks a placement other than split for one short watched peer."
+}

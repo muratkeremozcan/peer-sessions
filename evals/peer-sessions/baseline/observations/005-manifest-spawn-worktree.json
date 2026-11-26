@@ -1,0 +1,60 @@
+{
+  "legId": "manifest-spawn-worktree",
+  "sequence": 5,
+  "workspace": "mutated:M-008",
+  "cwd": "<workspace>",
+  "request": {
+    "probeId": "manifest-spawn-worktree",
+    "interfaceId": "peer-sessions-runner",
+    "operationId": "run-skill",
+    "kind": "cli",
+    "executable": "tea-skill-runner",
+    "subcommandPath": [],
+    "channels": {
+      "argument": {},
+      "option": {
+        "agent": "claude",
+        "skill-root": "peer-sessions",
+        "timeout-ms": "540000",
+        "model": "claude-opus-5-5",
+        "capability": "command-execution",
+        "agent-arg": "--settings={\"env\":{\"CLAUDE_SESSIONS_DIR\":\".peer-lab/spawn-worktree/sessions\",\"CLAUDE_PROJECTS_DIR\":\".peer-lab/spawn-worktree/projects\",\"HERDR_ENV\":\"1\",\"HERDR_PANE_ID\":\"wT:p1\",\"HERDR_WORKSPACE_ID\":\"wT\"}}"
+      },
+      "environment": [
+        "HOME",
+        "USER"
+      ],
+      "stdin": {
+        "kind": "text",
+        "value": "Setup, run first exactly as written: `rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init`.\nThen the user asks: start one Claude peer session working in the checkout `lab-repo/` for a long research task. Do it now with the skill's spawn script; do not send it a brief yet.\n\nWhen you are done, your final reply must be only one raw JSON object: no text before or after it and no code fence. Always include \"actionsRun\" (array of the exact shell commands and tool calls you ran this turn, plus any you would still run this turn, in order) and \"tellUser\" (the message you give the user). Also include \"sessionNames\" (array of the session names the spawn created, in order)."
+      }
+    }
+  },
+  "observation": {
+    "probeId": "manifest-spawn-worktree",
+    "interfaceId": "peer-sessions-runner",
+    "operationId": "run-skill",
+    "kind": "cli",
+    "exitCode": 0,
+    "stdout": {
+      "kind": "json",
+      "value": {
+        "actionsRun": [
+          "rm -rf .peer-lab/spawn-worktree lab-repo && git init -q -b feat/T27-Magaza-temizlik lab-repo && git -C lab-repo -c user.name=lab -c user.email=lab commit -q --allow-empty -m init",
+          "cat peer-sessions/SKILL.md; ls peer-sessions peer-sessions/*",
+          "sed -n 1,200p peer-sessions/references/placement.md",
+          "python3 peer-sessions/scripts/spawn-fleet.py --placement workspace worker-1:lab-repo"
+        ],
+        "tellUser": "The Claude peer session `worker-1` is running in `lab-repo/` in a new herdr workspace (wF1, pane wF1:p1). It became ready right away. I haven't sent it a brief, as you asked.\n\nIt's still running and will stay up so it keeps its context for the research task. To send it the brief, use `herdr agent prompt worker-1 <text>`, or SendMessage if this harness lets you reach it.\n\nTeardown, to run only when you want it stopped (kill the process first, then close the workspace):\n  kill 50938\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\n\nTo resume it after a reboot: cd lab-repo && claude --resume worker-1",
+        "sessionNames": [
+          "worker-1"
+        ]
+      }
+    },
+    "stderr": {
+      "kind": "text",
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":57804,\"outputTokens\":1091,\"costUsd\":\"0.0999296\"}\n"
+    },
+    "artifacts": {}
+  }
+}

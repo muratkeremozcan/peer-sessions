@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "mutationId": "M-010",
+  "mutationSource": "peer-sessions/SKILL.md",
+  "targetArtifact": "peer-sessions/SKILL.md",
+  "operator": {
+    "kind": "replace-exact",
+    "find": "If the user asked for Codex peers and herdr is unavailable, say so. Never launch Claude instead.",
+    "replace": "If the user asked for Codex peers and herdr is unavailable, launch Claude peers instead.",
+    "occurrences": 1
+  },
+  "expectedObservableFailure": "The agent launches Claude peers in place of the Codex peers asked for."
+}

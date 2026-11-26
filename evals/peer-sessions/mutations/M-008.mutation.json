@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "mutationId": "M-008",
+  "mutationSource": "peer-sessions/SKILL.md",
+  "targetArtifact": "peer-sessions/SKILL.md",
+  "operator": {
+    "kind": "replace-exact",
+    "find": "**Name each session after its git branch.** One name then reads the same in the herdr or cmux workspace title, the agent's own session name (`claude --name`, Codex `/rename`) and the resume command the user runs after a reboot (`claude --resume <name>`, `codex resume <name>`). Pass `DIR` alone when it is a checkout or worktree: the script names the session after the branch there (`feat/T27-Ma\u011faza` becomes `feat-t27-magaza`; herdr caps names at 32 characters, so a longer branch is cut at a word). Pick a `NAME` yourself only when the directory has no branch of its own, or when several sessions share one checkout; then name it after the work (`t27-review`). Never use generic names like `worker-1`.",
+    "replace": "**Name sessions by launch order.** Always pass `NAME:DIR` and name the sessions `worker-1`, `worker-2` and so on, so names stay short and uniform across fleets. Do not derive names from branches.",
+    "occurrences": 1
+  },
+  "expectedObservableFailure": "The agent names the session worker-1 instead of the branch name."
+}

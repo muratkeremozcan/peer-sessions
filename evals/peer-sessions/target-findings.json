@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "evaluationId": "peer-sessions",
+  "findings": [
+    {
+      "id": "T-001",
+      "summary": "SKILL.md section 2 said a brief that expects a reply ends with the caller's address, and two lines later said to ask for a fixed reply format, without saying which comes first. In one clean execution of about sixty the agent put the reply-format request after the address, so the brief did not end with the caller's address.",
+      "source": "clean-control-failure",
+      "evidence": {
+        "run": "20261124T232529002Z-e8ee2007",
+        "probe": "P-016",
+        "qualification": "baseline-pass"
+      },
+      "behaviorId": "B-005",
+      "severity": "material",
+      "target": {
+        "artifact": "peer-sessions/SKILL.md",
+        "change": "In section 2, say that the task, the reply format and the scope guard go above the address line, and that only a correlation footer may follow it. Applied in commit 56d6149."
+      },
+      "disposition": {
+        "decision": "this-pr",
+        "measurement": {
+          "partitions": [
+            {
+              "partition": "both",
+              "before": null,
+              "after": {
+                "run": "20261126T035951296Z-ba75cbf2",
+                "score": "20261126T060257469Z-f1375ae4"
+              }
+            }
+          ],
+          "probes": [
+            {
+              "probe": "P-016",
+              "before": null,
+              "after": {
+                "caught": true,
+                "caughtCount": 3,
+                "validCount": 3,
+                "votes": [
+                  "caught",
+                  "caught",
+                  "caught"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

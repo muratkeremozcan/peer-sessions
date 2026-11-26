@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "mutationId": "M-012",
+  "mutationSource": "peer-sessions/SKILL.md",
+  "targetArtifact": "peer-sessions/SKILL.md",
+  "operator": {
+    "kind": "replace-exact",
+    "find": "Each brief that expects a reply must end with your literal address (from `peer-addr.py --me`), because the peer cannot find out who you are. Write the task, the reply format and the scope guard above the address line; only a correlation footer (below) may follow it:\n\n```\nWhen done, message me back:\nSendMessage(to: \"uds:/tmp/cc-socks/4667.sock\", message: \"...\")\n```",
+    "replace": "A peer replies to whoever messaged it automatically, so a brief needs no return address:\n\n```\nWhen done, reply with your summary.\n```",
+    "occurrences": 1
+  },
+  "expectedObservableFailure": "The brief ends without a reply address for the caller."
+}
