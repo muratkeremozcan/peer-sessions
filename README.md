@@ -117,7 +117,7 @@ python3 -m unittest discover -s tests
 
 The tests put fake `cmux` and `herdr` executables on a reduced `PATH` and use temporary registry and transcript directories. They never reach a real multiplexer, server or session. They prove the scripts' mechanics; they are not a live compatibility check against a particular Claude Code, Codex, cmux or herdr build.
 
-`evals/peer-sessions` holds a behavioral evaluation of the skill. CI runs its deterministic `pr` tier on every pull request. The `release` tier (`evals/peer-sessions/ci/evaluation-ci-plan.json`) runs the skill against a live model and is not wired into any workflow: it needs a `CLAUDE_CODE_OAUTH_TOKEN` repository secret and a release event to run.
+`evals/peer-sessions` holds a behavioral evaluation of the skill. CI runs its deterministic `pr` tier on every pull request. The `release` tier (`evals/peer-sessions/ci/evaluation-ci-plan.json`) runs the skill against a live model and takes about 3 hours. To run it in CI, add the `CLAUDE_CODE_OAUTH_TOKEN` repository secret and uncomment the `evaluation-live` job in `.github/workflows/tests.yml`.
 
 ## Things that cost time to learn
 
