@@ -13,7 +13,7 @@
 - **Not caught:** nothing that was planted.
   11 behaviors have no planted defect, so their checks are unproven against a regression.
 - **Limits:** see "What the evaluation can't prove" below.
-- **Next step:** add the `CLAUDE_CODE_OAUTH_TOKEN` repo secret so CI can run the live tier.
+- **Next step:** to run the live check in CI, add the `CLAUDE_CODE_OAUTH_TOKEN` repo secret and uncomment `evaluation-live` in `.github/workflows/tests.yml`.
 - **Links:** development run `20261126T035951296Z-ba75cbf2`, its score, the accepted baseline in `evals/peer-sessions/baseline/`, the local `pr` tier run `20261126T060500431Z-c4d99ef7`, `evals/peer-sessions/ci/evaluation-ci-plan.json`, `evals/peer-sessions/target-findings.json` and PR #7.
 
 ## What the target got wrong

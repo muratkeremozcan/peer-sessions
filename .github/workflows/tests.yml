@@ -66,3 +66,30 @@ jobs:
           node-version: "24"
       - run: npm ci --prefix evals --ignore-scripts
       - run: npm exec --prefix evals -- tea-evaluate ci --evaluation evals/peer-sessions --tier pr
+
+  # Live evaluation: runs the skill against a real Claude model.
+  # To enable it, add the CLAUDE_CODE_OAUTH_TOKEN repository secret
+  # (create one with `claude setup-token`) and uncomment this job.
+  # It takes about 3 hours, so it runs on manual dispatch only:
+  # also add `workflow_dispatch:` under `on:` above.
+  #
+  # evaluation-live:
+  #   if: github.event_name == 'workflow_dispatch'
+  #   runs-on: macos-15
+  #   timeout-minutes: 240
+  #   env:
+  #     CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+  #   steps:
+  #     - uses: actions/checkout@v7
+  #       with:
+  #         persist-credentials: false
+  #     - uses: actions/setup-node@v7
+  #       with:
+  #         node-version: "24"
+  #     - run: npm install -g @anthropic-ai/claude-code
+  #     - run: npm ci --prefix evals --ignore-scripts
+  #     - run: python3 -B evals/lab/lab.py sync-root "$GITHUB_SHA" --root evals/root
+  #     - run: |
+  #         lab_path=$(python3 -B evals/lab/lab.py start --hours 4)
+  #         python3 -B evals/lab/lab.py ready "${lab_path%%/bin:*}" --needs 10800
+  #         PATH="$lab_path" npm exec --prefix evals -- tea-evaluate ci --evaluation evals/peer-sessions --tier release
