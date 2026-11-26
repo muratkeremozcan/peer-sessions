@@ -82,7 +82,7 @@ Worker research: test inventory and history drafted by two Haiku workers, verifi
 - Release flow: no tags, no GitHub releases, no release or deploy workflow. The skill ships by cloning into `~/.claude/skills/`.
 - Schedule: no workflow has a `schedule` trigger.
 - Risk profile: highest contract severity is `critical` (B-003, B-007, B-008, B-009, B-010, B-011). One live development run is 15 steps over 5 arms and 3 trials of Opus 5.5 with command execution, about 80 minutes; the held-out run is 4 mutated arms, about 90 minutes.
-- Live-tier prerequisites beyond the plan: `python3 -B evals/lab/lab.py start` and `python3 -B evals/lab/lab.py sync-root <commit> --root evals/root` before `tea-evaluate`, the lab PATH that `start` prints, the Claude CLI installed, and `CLAUDE_CODE_OAUTH_TOKEN` as a repository secret. The lab wraps `claude` in a Seatbelt profile, so the live tier runs on macOS. Scenario PIDs (941001 and up) sit above macOS `pid_max`.
+- Live-tier prerequisites beyond the plan: a fresh lab per `tea-evaluate` command (`python3 -B evals/lab/lab.py start --hours 4`, then `python3 -B evals/lab/lab.py ready <dir> --needs <seconds>`, which refuses a lab with less time left than the command needs), `python3 -B evals/lab/lab.py sync-root <commit> --root evals/root` before `tea-evaluate`, the lab PATH that `start` prints, the Claude CLI installed, and `CLAUDE_CODE_OAUTH_TOKEN` as a repository secret. The lab wraps `claude` in a Seatbelt profile, so the live tier runs on macOS. Scenario PIDs (941001 and up) sit above macOS `pid_max`.
 - Plan: `evals/peer-sessions/ci/evaluation-ci-plan.json`, `tea-evaluate check` clean. `pr`: check, compile, seal, oracle-agreement, replay. `release`: preflight-live, twin-run, strength-comparison. The held-out partition is not in the plan: the repository folder declares no held-out partition, and held-out runs go through the private view on the author's machine. Deleted as inapplicable: api-conformance (no HTTP target), gameability (no gameability probe), judge-calibration (no rubric). No scheduled entries. No `gates` (no publish or deploy job).
 - Deviations from AD-10 defaults: none. Live checks sit on `release`, their default for a target that needs a secret.
 - `evaluation.json`: `tiers` = `["pr", "release"]`; the registry entry declares `"login": "claude"`, so a CI run hands the target `CLAUDE_CODE_OAUTH_TOKEN` and a local run keeps the Keychain login.
@@ -91,10 +91,10 @@ Worker research: test inventory and history drafted by two Haiku workers, verifi
 Pull request checklist (`references/ci.md`):
 
 1. Inputs committed (`contract.json`, `evaluation.json`, `requirements.md`, `probes/`, `mutations/`, `policy/`, `corpus-index.json`, `ci/evaluation-ci-plan.json`); `tea-evaluate check` exits 0. Holds.
-2. Development run over that commit: `20261125T200115878Z-1c663b00` on `ddc0ddd`, `dirty: false`. Holds.
-3. Scored by `20261125T211949359Z-9d827141`; no probe reads `unreached`, `abstained` or `oracle-error`. Holds.
-4. Baseline accepted from that run and committed in `464a780`. Holds.
-5. Held-out frozen and independent: read only through `gap-view.json`; `check` over the view prints no `held-out-drift` warning; run `20261125T215307308Z-4915c484` records the frozen `heldOutDigest` (`sha256:01e128b8…`) of view `held-out-w4njkfh1`. Holds, with the retired P-022, the P-024 witness repair, the option-token fix and the O-013 changes disclosed in the authoring log (now `evals/peer-sessions/authoring-log.md`) and the gap report.
-6. `tea-evaluate ci --tier pr` exits 0 locally (`20261125T212009057Z-842ad665`). Holds.
+2. Development run over that commit: `20261126T035951296Z-ba75cbf2` on `a913487`, `dirty: false`. Holds.
+3. Scored by `20261126T060257469Z-f1375ae4`; no probe reads `unreached`, `abstained` or `oracle-error`. Holds.
+4. Baseline accepted from that run and committed in `fad7940`. Holds.
+5. Held-out frozen and independent: read only through `gap-view.json`; `check` over the view prints no `held-out-drift` warning; run `20261126T065449705Z-0d2c1ed5` records the frozen `heldOutDigest` (`sha256:01e128b8…`) of view `held-out-w4njkfh1`. Holds, with the retired P-022, the P-024 witness repair, the option-token fix and the O-013 changes disclosed in the authoring log (now `evals/peer-sessions/authoring-log.md`) and the gap report.
+6. `tea-evaluate ci --tier pr` exits 0 locally (`20261126T060500431Z-c4d99ef7`). Holds.
 7. The repository's pull request checks pass on the branch: recorded on the pull request.
 8. `gap-report.md` opens with a filled `## Evaluation brief`. Holds.

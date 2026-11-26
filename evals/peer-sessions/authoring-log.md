@@ -391,3 +391,10 @@ Relayed by Kerem: close both CodeRabbit oracle gaps, fix F-1 in this PR, documen
 - The lab was live for the whole run. The spawn trials' teardown blocks name the peer's PID (`kill 50938`), which `spawn-fleet.py` prints only when `peer-addr.py` sees the peer alive; the expired-lab runs printed no PID there. The "No live Claude Code sessions matched" lines in the records come from the Codex caller observation, whose `orbits` session at PID 961001 is part of the scenario and does not exist in the lab.
 - `compare` against `1c663b00`: the four defect probes equivalent; the 15 clean-only probes incomparable, as before. Accepted as the baseline with `compare --accept` (199 files under `baseline/`). `target-findings` on the run reports 0 candidates. T-001's measurement now cites this run and score; P-016 was caught in 3 of 3.
 - `ci --tier pr` locally: 5 checks, 0 blocking, 0 warning (run `20261126T060500431Z-c4d99ef7`). `check` and `check --ready` exit 0.
+
+## Held-out rerun on fresh labs (2026-11-26)
+
+- Held-out preflight `20261126T060623781Z-0897e959` (exit 0) ran in fresh lab `pslab-3_84z85n`; `ready --needs 7200` passed first, 11,494 seconds were left after, and the lab was stopped. All four held-out probes qualified.
+- Held-out run `20261126T065449705Z-0d2c1ed5` (exit 0) ran in its own fresh lab `pslab-v45r2g6v`; `ready --needs 7200` passed first, 8,433 seconds were left after, and the lab was stopped. `run.json` records `heldOutDigest` `sha256:01e128b8…`, the same freeze. Score `20261126T083426342Z-858111d4` (exit 0), read through `gap-view.json` and `strength-aggregate.json`: P-020, P-021, P-023 and P-024 caught in 3 of 3 trials; defect strength 4 of 4 meets the floor of 1.
+- `check` over the view prints no `held-out-drift` warning. It warns that the view has no `target-findings.json`; that file lives in the repository folder, where `check` reads it.
+- Every run the expired lab touched now has a live-lab replacement: development `ba75cbf2` for `1c663b00`, held-out `0d2c1ed5` for `4915c484`. The verdicts are unchanged.
