@@ -5,6 +5,12 @@ Use `lab.py start` to print a run-specific PATH. Stop that run with the
 directory above its bin, for example `lab.py stop "${LAB_PATH%%/bin:*}"`.
 Fake state stays in the trial cwd and follows CLAUDE_SESSIONS_DIR.
 
+A lab lives for `--hours` (6 by default) and then exits. Its fake peers use
+the lab's own PID and socket, so they cannot outlive it, and every wrapper
+refuses to run once it is gone. Start a fresh lab for each run and check it
+first with `lab.py ready DIR --needs SECONDS`, which fails when the lab has
+less time left than the run needs.
+
 The run's `claude` starts under Seatbelt with reads and writes of the
 held-out state directory denied (see `prepare_held_out.py`), so the agent and
 every process it starts cannot open held-out material even with TeA's
@@ -19,6 +25,7 @@ import os
 from pathlib import Path
 import secrets
 import selectors
+import shlex
 import shutil
 import signal
 import socket
@@ -41,13 +48,27 @@ TOKEN_FILE = "token"
 START_TIMEOUT = 5
 CONTROL_TIMEOUT = 0.25
 RUN_TIMEOUT = 6 * 3600
+# EX_UNAVAILABLE: a wrapper of a lab that has stopped.
+LAB_GONE = 69
 SANDBOX_EXEC = "/usr/bin/sandbox-exec"
 PROFILE_FILE = "withhold.sb"
 STATE = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state") / "peer-sessions-eval"
 TARGET_PATHS = ("LICENSE", "README.md", "SKILL.md", "docs", "examples", "references", "schemas", "scripts", "tests")
 
 WRAPPER = '''#!/usr/bin/python3
-import os, runpy
+import os, runpy, socket, sys
+# The fake peers register under the lab's PID and socket. Once the lab has
+# stopped they read as dead, so refuse to run instead of misreporting them.
+try:
+    with open({pidfile!r}) as handle:
+        lab_pid = int(handle.read().strip())
+    os.kill(lab_pid, 0)
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as probe:
+        probe.settimeout(0.25)
+        probe.connect({sock!r})
+except (OSError, ValueError):
+    sys.stderr.write({stopped!r} + "\\n")
+    sys.exit({gone})
 sessions = os.path.abspath(os.environ.get("CLAUDE_SESSIONS_DIR", ".peer-lab/sessions"))
 lab = os.path.dirname(sessions)
 state = os.path.join(lab, "state")
@@ -55,8 +76,7 @@ for d in (sessions, state, os.path.join(lab, "projects")):
     os.makedirs(d, exist_ok=True)
 os.environ["CLAUDE_SESSIONS_DIR"] = sessions
 os.environ.setdefault("FAKE_STATE", state)
-with open({pidfile!r}) as handle:
-    os.environ["FAKE_PID"] = handle.read().strip()
+os.environ["FAKE_PID"] = str(lab_pid)
 os.environ["FAKE_SOCKET"] = {sock!r}
 os.environ["FAKE_TOOL"] = {tool!r}
 runpy.run_path({fakebin!r}, run_name="__main__")
@@ -64,6 +84,10 @@ runpy.run_path({fakebin!r}, run_name="__main__")
 
 
 CLAUDE_WRAPPER = """#!/bin/sh
+if ! kill -0 "$(cat {pidfile} 2>/dev/null)" 2>/dev/null; then
+    echo {stopped} >&2
+    exit {gone}
+fi
 exec {sandbox} -f {profile} {claude} "$@"
 """
 
@@ -90,12 +114,12 @@ def unix_socket(path):
     return listener
 
 
-def serve(run):
+def serve(run, lifetime=RUN_TIMEOUT):
     # Only the starter owns a child handle. Detached runs use their control socket.
     for signum in (signal.SIGINT, signal.SIGHUP, signal.SIGTERM):
         signal.signal(signum, signal.SIG_IGN)
     token = (run / TOKEN_FILE).read_bytes()
-    deadline = time.monotonic() + RUN_TIMEOUT
+    deadline = time.monotonic() + lifetime
     with unix_socket(run / SOCK_FILE) as fake, unix_socket(run / CONTROL_FILE) as control, selectors.DefaultSelector() as selector:
         selector.register(fake, selectors.EVENT_READ)
         selector.register(control, selectors.EVENT_READ)
@@ -120,7 +144,8 @@ def serve(run):
                             conn.sendall(b"stopped\n")
                             return
                         if command == b"ready":
-                            conn.sendall(f"ready {os.getpid()}\n".encode())
+                            left = max(0, int(deadline - time.monotonic()))
+                            conn.sendall(f"ready {os.getpid()} {left}\n".encode())
                     except OSError:
                         continue
 
@@ -135,7 +160,51 @@ def request(run, command):
             return stream.readline(128)
 
 
-def start():
+def write_wrappers(run, claude=None):
+    """The fake herdr and cmux wrappers, and the sandboxed claude when CLAUDE is a copied binary."""
+    bindir = run / "bin"
+    bindir.mkdir(exist_ok=True)
+    stopped = f"peer-sessions lab {run} has stopped; start a new lab for this run"
+    names = {"pidfile": str(run / "pid"), "sock": str(run / SOCK_FILE), "gone": LAB_GONE}
+    for tool in ("herdr", "cmux"):
+        wrapper = bindir / tool
+        wrapper.write_text(WRAPPER.format(tool=tool, fakebin=str(FAKEBIN), stopped=stopped, **names))
+        wrapper.chmod(0o755)
+    if claude is not None:
+        wrapper = bindir / "claude"
+        wrapper.write_text(CLAUDE_WRAPPER.format(
+            sandbox=SANDBOX_EXEC, profile=run / PROFILE_FILE, claude=claude,
+            pidfile=shlex.quote(names["pidfile"]), stopped=shlex.quote(stopped), gone=LAB_GONE,
+        ))
+        wrapper.chmod(0o755)
+
+
+def parse_ready(reply, pid=None):
+    """Seconds the lab has left from its `ready` reply, or None when the reply is not one."""
+    parts = reply.decode(errors="replace").split()
+    if len(parts) != 3 or parts[0] != "ready" or not parts[2].isdigit():
+        return None
+    if pid is not None and parts[1] != str(pid):
+        return None
+    return int(parts[2])
+
+
+def ready(run, needs=0):
+    """Seconds left in the lab at RUN; fail when it is gone or has less than NEEDS left."""
+    try:
+        left = parse_ready(request(run, b"ready"))
+    except OSError as error:
+        raise RuntimeError(f"lab {run} is not running ({error}); start a new one") from error
+    if left is None:
+        raise RuntimeError(f"lab {run} gave no ready reply; start a new one")
+    if left < needs:
+        raise RuntimeError(
+            f"lab {run} has {left}s left and the run needs {needs}s; start a new one"
+        )
+    return left
+
+
+def start(lifetime=RUN_TIMEOUT):
     run = Path(tempfile.mkdtemp(prefix=RUN_PREFIX, dir="/tmp"))
     server = None
     ready = False
@@ -143,12 +212,6 @@ def start():
         bindir = run / "bin"
         bindir.mkdir()
         (run / TOKEN_FILE).write_text(secrets.token_hex(32))
-        for tool in ("herdr", "cmux"):
-            wrapper = bindir / tool
-            wrapper.write_text(WRAPPER.format(
-                pidfile=str(run / "pid"), sock=str(run / SOCK_FILE), tool=tool, fakebin=str(FAKEBIN),
-            ))
-            wrapper.chmod(0o755)
         for tool in ("claude", "node", "npm", "npx"):
             real = shutil.which(tool)
             if real is None:
@@ -159,20 +222,18 @@ def start():
                 # Homebrew can delete the versioned executable during a run.
                 shutil.copy2(os.path.realpath(real), bindir / ".claude-bin")
                 (run / PROFILE_FILE).write_text(withhold_profile())
-                (bindir / tool).write_text(CLAUDE_WRAPPER.format(
-                    sandbox=SANDBOX_EXEC, profile=run / PROFILE_FILE, claude=bindir / ".claude-bin",
-                ))
-                (bindir / tool).chmod(0o755)
             else:
                 (bindir / tool).symlink_to(real)
+        write_wrappers(run, claude=bindir / ".claude-bin")
         server = subprocess.Popen(
-            [sys.executable, str(SCRIPT), "serve", str(run)], start_new_session=True,
+            [sys.executable, str(SCRIPT), "serve", str(run), "--lifetime", str(lifetime)],
+            start_new_session=True,
             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         deadline = time.monotonic() + START_TIMEOUT
         while server.poll() is None and time.monotonic() < deadline:
             try:
-                ready = request(run, b"ready") == f"ready {server.pid}\n".encode()
+                ready = parse_ready(request(run, b"ready"), server.pid) is not None
             except OSError:
                 pass
             if ready:
@@ -277,23 +338,31 @@ def sync_root(revision, root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("start")
+    begin = commands.add_parser("start")
+    begin.add_argument("--hours", type=float, default=RUN_TIMEOUT / 3600)
+    check_ready = commands.add_parser("ready")
+    check_ready.add_argument("run", type=Path)
+    check_ready.add_argument("--needs", type=int, default=0, help="seconds the next run needs")
     sync = commands.add_parser("sync-root")
     sync.add_argument("revision", nargs="?", default="HEAD")
     sync.add_argument("--root", type=Path, default=REPO / "evals" / "root")
     check = commands.add_parser("withhold-check")
     check.add_argument("target", type=Path)
     check.add_argument("--cwd", type=Path, default=REPO / "evals" / "root" / "peer-sessions")
-    for command in ("stop", "serve"):
-        commands.add_parser(command).add_argument("run", type=Path)
+    commands.add_parser("stop").add_argument("run", type=Path)
+    server = commands.add_parser("serve")
+    server.add_argument("run", type=Path)
+    server.add_argument("--lifetime", type=float, default=RUN_TIMEOUT)
     args = parser.parse_args()
     try:
         if args.command == "start":
-            print(run_path(start()))
+            print(run_path(start(args.hours * 3600)))
+        elif args.command == "ready":
+            print(f"lab {args.run}: {ready(args.run, args.needs)}s left")
         elif args.command == "stop":
             stop(args.run)
         elif args.command == "serve":
-            serve(args.run)
+            serve(args.run, args.lifetime)
         elif args.command == "withhold-check":
             sys.exit(withhold_check(args.target, args.cwd))
         else:
