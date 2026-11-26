@@ -5,10 +5,11 @@
     {
       "id": "T-001",
       "summary": "SKILL.md section 2 said a brief that expects a reply ends with the caller's address, and two lines later said to ask for a fixed reply format, without saying which comes first. In one clean execution of about sixty the agent put the reply-format request after the address, so the brief did not end with the caller's address.",
-      "source": "authoring",
+      "source": "clean-control-failure",
       "evidence": {
-        "record": "authoring-log.md",
-        "excerpt": "Finding for the skill: SKILL.md section 2 says a brief must end with the caller's address and, two lines later, to ask for a fixed reply format, without saying where that request goes."
+        "run": "20261124T232529002Z-e8ee2007",
+        "probe": "P-016",
+        "qualification": "baseline-pass"
       },
       "behaviorId": "B-005",
       "severity": "material",

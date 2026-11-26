@@ -25,10 +25,10 @@
 
 | Finding | Source | Evidence | Target artifact | Proposed change | Disposition |
 | --- | --- | --- | --- | --- | --- |
-| T-001 | authoring (B-005, material) | `authoring-log.md`: "Finding for the skill: SKILL.md section 2 says a brief must end with the caller's address and, two lines later, to ask for a fixed reply format, without saying where that request goes." It records run `20261124T232529002Z-e8ee2007`, where P-016's clean arm failed its qualification. | `peer-sessions/SKILL.md` | Put the task, the reply format and the scope guard above the address line; only a correlation footer may follow it. | this PR (commit `56d6149`) |
+| T-001 | clean-control-failure (B-005, material) | Run `20261124T232529002Z-e8ee2007`: P-016's clean arm failed its qualification (`qualification/P-016/baseline-pass.json` reads `violated`, O-012). | `peer-sessions/SKILL.md` | Put the task, the reply format and the scope guard above the address line; only a correlation footer may follow it. | this PR (commit `56d6149`) |
 
-T-001 is recorded as an authoring finding.
-TeA's `clean-control-failure` source accepts only a probe whose `expectedClean` is true, and P-016 is a defect probe whose clean arm failed.
+The cited run stopped at qualification, so it lives only in the local `runs/` folder.
+`check` verifies the citation on a machine that has that run; elsewhere it warns that the evidence is unverified.
 No other run, earlier or current, shows a target problem.
 
 ## Net improvements

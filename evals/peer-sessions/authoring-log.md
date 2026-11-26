@@ -370,3 +370,10 @@ Relayed by Kerem: close both CodeRabbit oracle gaps, fix F-1 in this PR, documen
 - Held-out preflight `20261125T212035447Z-b2fa9a92` on view `held-out-w4njkfh1` (exit 0): P-020, P-021, P-023 and P-024 qualified.
 - Held-out run `20261125T215307308Z-4915c484` (exit 0), score `20261125T225747460Z-236b955e`. `run.json` records `heldOutDigest` `sha256:01e128b8…`, the freeze above. Read through `gap-view.json` and `strength-aggregate.json` only: P-020, P-021, P-023 and P-024 caught in 3 of 3 trials; defect strength 4 of 4, which meets the floor of 1.
 - TeA leaves one `/usr/bin/log stream … tea-evaluate-audit-<id>` process per run with a 4-hour timeout; five were still running after their runs ended. That is a leak in TeA, reported with these results.
+
+## TeA 4.6.1 and T-001 (2026-11-26)
+
+- `evals/package-lock.json` resolves `bmad-method-test-architecture-enterprise` 4.6.1; eval-quality stays 10.1.1. `npm audit` reports the same 3 moderate `minimatch` advisories.
+- `tea-evaluate target-findings --run 20261124T232529002Z-e8ee2007` now drafts one candidate: `clean-control-failure` on P-016, citing `qualification` `baseline-pass`, B-005, material. T-001 is re-recorded with that source and evidence; its measurement is unchanged (run `1c663b00`, score `9d827141`).
+- This log stays in the evaluation folder: TeA's `authoring-routing.md` keeps it at `<evaluation-folder>/authoring-log.md`.
+- `tea-evaluate check` and `check --ready` exit 0 here, where the cited run is on disk. On a copy without `runs/`, as CI checks it out, `check` exits 0 with a warning that T-001's evidence is unverified, and `check --ready` exits 10 on the same item. The `pr` tier on that copy exits 0 with no blocking or warning check.
