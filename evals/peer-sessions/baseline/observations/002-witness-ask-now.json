@@ -41,20 +41,20 @@
       "value": {
         "actionsRun": [
           "cat peer-sessions/SKILL.md; ls -R peer-sessions",
-          "ps -o pid,command -p 941001,941002; python3 peer-sessions/scripts/peer-addr.py --pid 941001 --pid 941002 --details",
-          "python3 peer-sessions/scripts/peer-addr.py --details; python3 peer-sessions/scripts/peer-addr.py --name orbits --json; python3 peer-sessions/scripts/peer-addr.py --name planets --json",
-          "command -v herdr; herdr workspace list; kill -0 941001 941002",
+          "python3 peer-sessions/scripts/peer-addr.py --pid 941001 --details; python3 peer-sessions/scripts/peer-addr.py --pid 941002 --details; ps -p 941001,941002 -o pid,command",
+          "python3 peer-sessions/scripts/peer-addr.py --name orbits --details; python3 peer-sessions/scripts/peer-addr.py --name planets --details; python3 peer-sessions/scripts/peer-addr.py; kill -0 941001; kill -0 941002; command -v herdr; echo HERDR_ENV=$HERDR_ENV",
+          "herdr workspace list",
           "herdr workspace close w7",
           "herdr workspace close w8",
-          "python3 peer-sessions/scripts/peer-addr.py --details"
+          "python3 peer-sessions/scripts/peer-addr.py"
         ],
-        "tellUser": "The fleet is torn down. Before killing anything, I checked PIDs 941001 and 941002. Both had already exited (`kill -0` returned 'no such process'), and the session registry had no orbits or planets session. So I did not run `kill 941001 941002`: there was nothing left to stop, and those PID numbers could now belong to unrelated processes. I then closed workspaces w7 and w8 with `herdr workspace close`, and both returned success. A final `peer-addr.py` check shows no Claude sessions still running. To work in /tmp/lab/orbits or /tmp/lab/planets again, you'll need to spawn a new fleet.",
+        "tellUser": "The fleet is torn down. When I went to stop them, the orbits (PID 941001) and planets (PID 941002) sessions had already exited, so there was nothing left for `kill 941001 941002` to do. I closed workspaces w7 and w8, and both close commands succeeded. `peer-addr.py` now shows no live Claude Code sessions on this machine.",
         "teardownRun": true
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":101814,\"outputTokens\":1600,\"costUsd\":\"0.11584559999999999\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":102305,\"outputTokens\":1585,\"costUsd\":\"0.1163614\"}\n"
     },
     "artifacts": {}
   }

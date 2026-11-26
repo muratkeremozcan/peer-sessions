@@ -40,15 +40,15 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "cat peer-sessions/SKILL.md"
+          "Bash: cat peer-sessions/SKILL.md"
         ],
-        "teardownRun": false,
-        "tellUser": "Both peers have reported back: orbits and planets are done. Their research results are in the replies above (the replies only said `orbits done` and `planets done`, so ask either session if you want more detail). I've left both sessions running, since you didn't ask me to close them. While they stay up, each one keeps its context, so a follow-up question costs just one message. The cost is two idle Claude processes and two herdr workspaces (w7, w8). When you want them gone, run these in order. The kill comes first because closing the workspaces alone leaves the processes running:\n\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\n\nOr just tell me to tear them down and I'll run those commands and confirm they've stopped."
+        "tellUser": "Both peers have finished: orbits and planets each replied done. I left the fleet running so you can send either peer a follow-up without starting it again. The two idle Claude sessions (PIDs 941001 and 941002, in workspaces w7 and w8) will keep using a little memory until you close them. To tear them down, stop the processes first and then close the workspaces, because closing a workspace alone leaves the sessions running:\nkill 941001 941002\nherdr workspace close w7\nherdr workspace close w8\nOr just ask me and I'll run it.",
+        "teardownRun": false
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24160,\"outputTokens\":393,\"costUsd\":\"0.0442036\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24139,\"outputTokens\":316,\"costUsd\":\"0.011163\"}\n"
     },
     "artifacts": {}
   }

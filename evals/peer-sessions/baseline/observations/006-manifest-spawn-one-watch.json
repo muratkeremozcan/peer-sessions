@@ -41,17 +41,18 @@
       "value": {
         "actionsRun": [
           "Bash: rm -rf .peer-lab/spawn-one-watch",
-          "Bash: cat peer-sessions/SKILL.md; ls -R peer-sessions | head -50",
-          "Bash: ls -la lab lab/x lab/y 2>&1; grep -n -i -A3 \"dirs\" peer-sessions/references/placement.md | head -40",
-          "Bash: python3 peer-sessions/scripts/spawn-fleet.py --placement workspace x-readme-skim:lab/x y-readme-skim:lab/y"
+          "Bash: cat peer-sessions/SKILL.md; ls -R peer-sessions",
+          "Bash: ls -la lab lab/x lab/y; git -C lab/x rev-parse --abbrev-ref HEAD; git -C lab/y rev-parse --abbrev-ref HEAD; grep -n -i -A3 \"dirs\\|name\" peer-sessions/references/placement.md | head -60",
+          "Bash: python3 peer-sessions/scripts/spawn-fleet.py --placement workspace x-readme-skim:lab/x y-readme-skim:lab/y",
+          "Bash: python3 peer-sessions/scripts/peer-addr.py --name x-readme-skim --details; python3 peer-sessions/scripts/peer-addr.py --name y-readme-skim --details"
         ],
-        "tellUser": "Both Claude peers are running in a new herdr workspace, wF1: x-readme-skim is in pane wF1:p1 (lab/x) and y-readme-skim is in pane wF1:p2 (lab/y). Both reported ready. lab/x and lab/y didn't exist yet, so the spawn script created them. Neither is a git checkout, so I named each session after its task. As you asked, I haven't sent any briefs. When I do, I'll send them with SendMessage. If SendMessage can't reach a peer by name, I'll use `herdr agent prompt <name> <text>` instead. Both sessions stay up until you ask me to close them. Leaving them running costs nothing until they get work, and they keep their context. To tear them down: `herdr workspace close wF1`, then check that nothing is left with `python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py`. To resume one after a reboot: `cd lab/x && claude --resume x-readme-skim` or `cd lab/y && claude --resume y-readme-skim`.",
+        "tellUser": "I started both peers. They're in one new herdr workspace (wF1): `x-readme-skim` is in `lab/x` (pane p1) and `y-readme-skim` is in `lab/y` (pane p2). The spawn script reported both ready and exited 0. `lab/x` and `lab/y` didn't exist and aren't git checkouts, so the script created them, and I named the sessions after their task. No briefs have been sent.\n\nOne thing to check before you send briefs: both sessions show the same PID (50938) and the same address (`uds:/tmp/pslab-6fjglrpa/s.sock`), even though their session IDs differ (e08ec19c… and e0a13bf6…). That means a message sent to that address can't be aimed at just one of them. The teardown the script printed also kills only that one PID, so it may leave the second session running. When we brief them, I'd use the session names, or `herdr agent prompt <name>` if SendMessage bounces, and check which session actually gets each brief.\n\nBoth sessions are still running and stay up until you ask me to stop them. Teardown, which I haven't run:\n  kill 50938\n  herdr workspace close wF1\n  python3 ~/.claude/skills/peer-sessions/scripts/peer-addr.py\nAfter teardown, run that last command to confirm both sessions are gone.\n\nTo resume after a reboot:\n  cd lab/x && claude --resume x-readme-skim\n  cd lab/y && claude --resume y-readme-skim",
         "placement": "workspace"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":55120,\"outputTokens\":1337,\"costUsd\":\"0.094594\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":74708,\"outputTokens\":1887,\"costUsd\":\"0.1232628\"}\n"
     },
     "artifacts": {}
   }

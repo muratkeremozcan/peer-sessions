@@ -40,21 +40,20 @@
       "kind": "json",
       "value": {
         "actionsRun": [
-          "Read peer-sessions/SKILL.md",
-          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-66d76a99-a502-4290-8441-14e1229ac984/target/peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-a:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-66d76a99-a502-4290-8441-14e1229ac984/target diff-review-b:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-66d76a99-a502-4290-8441-14e1229ac984/target",
-          "python3 /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-66d76a99-a502-4290-8441-14e1229ac984/target/peer-sessions/scripts/peer-addr.py --me",
-          "SendMessage(to: \"diff-review-a\", message: \"<review brief: review the diff, read-only, do not edit files; reply format 'diff-review-a done: <findings>'; ends with my uds: address>\", summary: \"Review the diff, report findings\")",
-          "SendMessage(to: \"diff-review-b\", message: \"<same review brief, reply format 'diff-review-b done: <findings>'; ends with my uds: address>\", summary: \"Review the diff, report findings\")",
-          "SendMessage(to: \"diff-review-a [<ref from bounce>]\", message: \"<same brief>\", summary: \"Review the diff, report findings\")",
-          "SendMessage(to: \"diff-review-b [<ref from bounce>]\", message: \"<same brief>\", summary: \"Review the diff, report findings\")"
+          "Read(peer-sessions/SKILL.md)",
+          "python3 peer-sessions/scripts/spawn-fleet.py --backend cmux --runtime claude --placement split diff-review-correctness:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-a3c87a5a-f752-4664-ba34-e4f63954270a/target diff-review-risks:/private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-010-a3c87a5a-f752-4664-ba34-e4f63954270a/target",
+          "python3 peer-sessions/scripts/peer-addr.py --me",
+          "SendMessage(to: \"diff-review-correctness\", message: \"Review the diff for correctness bugs. Read and review only; do not edit files. Reply format: 'diff-review-correctness done: <findings>'. When done, message me back: SendMessage(to: \"<my uds: address>\", message: \"...\")\", summary: \"Review diff for correctness bugs\")",
+          "SendMessage(to: \"diff-review-risks\", message: \"Review the diff for edge cases, security issues and missing tests. Read and review only; do not edit files. Reply format: 'diff-review-risks done: <findings>'. When done, message me back: SendMessage(to: \"<my uds: address>\", message: \"...\")\", summary: \"Review diff for risks and tests\")",
+          "Re-send both briefs together using the [ref] from each bounce error"
         ],
-        "tellUser": "I can't start Codex peers on this machine. Codex sessions need herdr, and only cmux is installed. I'm starting two Claude Code reviewers instead, diff-review-a and diff-review-b, in split panes next to this one. Each gets a read-only brief to review the diff and send its findings back to me. I'll end my turn once the briefs are sent, and their replies will come in as new messages. When they're done the sessions stay open so you can ask follow-up questions, and I'll give you the teardown commands. If you need Codex specifically, install herdr and run me from inside a herdr pane.",
+        "tellUser": "I can't start Codex peers on this machine. Codex peers need herdr, and herdr isn't installed here; only cmux is. So I'm starting two Claude Code peers in cmux instead: diff-review-correctness and diff-review-risks. They open as split panes next to mine, and each gets a read-only review brief. Their replies will come back to me as new messages, and I'll combine them for you. Both sessions stay running when they finish. You can tear them down whenever you want with the commands the spawn script prints. If you need Codex specifically, install herdr and run me from a herdr pane.",
         "runtimeLaunched": "claude"
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24319,\"outputTokens\":1610,\"costUsd\":\"0.0834968\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":24334,\"outputTokens\":1345,\"costUsd\":\"0.0782934\"}\n"
     },
     "artifacts": {}
   }

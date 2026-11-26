@@ -41,15 +41,15 @@
       "value": {
         "actionsRun": [
           "Bash: cat peer-sessions/SKILL.md; ls peer-sessions",
-          "Bash: ls -la peer-sessions/docs/ docs/ 2>&1; pwd"
+          "Bash: cd peer-sessions && ls docs && realpath docs/coordination-contract-v1.md"
         ],
-        "tellUser": "The brief for `orbits` is written but not sent. It doesn't include your `uds:/tmp/cc-socks/987654.sock` address because the skill says a peer replies to whoever messaged it, so a brief needs no return address. The doc path points to the copy in the skill's own directory, `peer-sessions/docs/coordination-contract-v1.md`, because there is no `docs/` in the working directory. I wrote it as an absolute path since `orbits` runs in a different directory. The brief limits the peer to reading only and asks for a reply that starts with `orbits done:`. If you send it later by bare name, the first send will bounce; re-send it with the `[ref]` from the error.",
-        "brief": "Please read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-707c891e-8baf-4657-ad64-0168151dd975/target/peer-sessions/docs/coordination-contract-v1.md and summarise it.\n\nCover: what the contract is for, the receipt/JSON format and its key fields, the status values and exit codes and what each means (including denied / unknown / failed / blocked), how correlation IDs are echoed, and any versioning or compatibility rules. Keep it to about 10-15 bullets and quote field names exactly.\n\nScope: read only. Do not edit, create, or run anything, and do not touch any other files or repos.\n\nWhen done, reply to me with your summary in this format:\norbits done:\n- <bullet>\n- <bullet>\n..."
+        "brief": "Please read /private/var/folders/3b/5kzs662j47v6vdz26gbkvlgc0000gn/T/tea-evaluate-mutated-M-012-c2640da6-a45e-4e38-a6c3-26070f2f6d9e/target/peer-sessions/docs/coordination-contract-v1.md and summarise it. Cover: what the contract is for, the receipt/JSON inventory format and its key fields, the exit codes and failure states (denied / unknown / failed / blocked), how --correlate IDs are echoed back, and any versioning or compatibility rules. Keep it to about 10-15 bullets.\n\nScope: read and summarise only. Do not edit, create or delete any files, and do not run any spawn or teardown scripts.\n\nWhen you're done, reply to me with your summary in this format:\norbits done:\n<bullets>",
+        "tellUser": "The brief for `orbits` is ready and I haven't sent it. It gives the contract's absolute path, because `docs/coordination-contract-v1.md` resolves inside `peer-sessions/` and `orbits` runs in its own directory. It also lists what the summary should cover, limits `orbits` to reading only, and asks for a reply that starts with `orbits done:`. I left out your `uds:/tmp/cc-socks/987654.sock` address because the skill says a peer replies to whoever messaged it automatically. I also skipped a correlation footer, since this is a single request to `orbits`."
       }
     },
     "stderr": {
       "kind": "text",
-      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":38482,\"outputTokens\":1078,\"costUsd\":\"0.0773662\"}\n"
+      "value": "TEA_EVALUATE_USAGE_JSON:{\"inputTokens\":38519,\"outputTokens\":948,\"costUsd\":\"0.07492180000000001\"}\n"
     },
     "artifacts": {}
   }
